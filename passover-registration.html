@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passover Seder — Guest Registration</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --gold-pale: #F5E9C8;
+    --deep: #1A1208;
+    --deep2: #2E1F0A;
+    --cream: #FAF6ED;
+    --text: #2A1A04;
+    --muted: #7A6040;
+    --green: #2D6A4F;
+    --red: #8B2020;
+    --border: rgba(201,168,76,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--deep);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--gold);
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold-light);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .header-sub {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .sheet-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sheet-btn:hover { background: rgba(201,168,76,0.15); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--deep2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+  }
+  .tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active {
+    color: var(--gold-light);
+    border-bottom-color: var(--gold);
+  }
+  .tab:hover:not(.active) { color: #a89060; }
+
+  /* PANELS */
+  .panel { display: none; padding: 32px; max-width: 900px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* SECTION */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--deep);
+    margin-bottom: 6px;
+  }
+  .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  input, select {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+
+  /* BUTTONS */
+  .btn-primary {
+    background: var(--gold);
+    color: var(--deep);
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-secondary {
+    background: white;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); }
+  .btn-danger {
+    background: white;
+    color: var(--red);
+    border: 1px solid rgba(139,32,32,0.2);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-danger:hover { background: #fff5f5; }
+
+  .actions { display: flex; gap: 12px; margin-top: 24px; align-items: center; flex-wrap: wrap; }
+
+  /* GUEST LIST */
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: gap;
+  }
+  .guest-count {
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--gold-pale);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .search-bar {
+    padding: 10px 14px 10px 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 260px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237A6040' stroke-width='1.5' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+    outline: none;
+  }
+  .search-bar:focus { border-color: var(--gold); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(201,168,76,0.06); }
+  tbody td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .badge-id { font-family: monospace; font-size: 12px; background: var(--gold-pale); color: var(--deep2); padding: 2px 8px; border-radius: 4px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .tag-walkin { background: #E8F4F0; color: #1A5C40; }
+  .tag-prereg { background: #EEF2FF; color: #3730A3; }
+  .tag-full { background: #FEF3C7; color: #92400E; }
+
+  /* CARD PREVIEW */
+  .card-preview-wrap { display: flex; gap: 32px; flex-wrap: wrap; }
+  .card-preview {
+    width: 320px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.12);
+  }
+  .card-preview-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* BADGE DESIGN */
+  .badge {
+    width: 280px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #FAF4E2 0%, #FFF9F0 100%);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .badge-header {
+    background: var(--deep);
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .badge-event {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold-light);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .badge-dates {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .badge-body { padding: 12px 14px; display: flex; gap: 12px; align-items: center; }
+  .badge-qr { flex-shrink: 0; }
+  .badge-info { flex: 1; min-width: 0; }
+  .badge-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--deep);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Playfair Display', serif;
+  }
+  .badge-id-text { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: monospace; }
+  .badge-meals {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .badge-meal-box {
+    flex: 1;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 6px;
+    text-align: center;
+  }
+  .badge-meal-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .badge-meal-days { font-size: 9px; font-weight: 500; color: var(--deep); margin-top: 1px; }
+  .badge-footer {
+    background: var(--gold-pale);
+    padding: 5px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .badge-footer-text { font-size: 9px; color: var(--muted); }
+
+  /* CONFIG */
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .config-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .config-card-title { font-size: 13px; font-weight: 500; color: var(--deep); margin-bottom: 12px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--deep);
+    color: var(--gold-light);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    border: 1px solid var(--gold);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* SETUP INSTRUCTIONS */
+  .setup-steps { display: flex; flex-direction: column; gap: 16px; }
+  .setup-step {
+    display: flex;
+    gap: 16px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    background: var(--gold);
+    color: var(--deep);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-content h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .step-content p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .step-content code {
+    background: var(--gold-pale);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    color: var(--deep2);
+    word-break: break-all;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    .header, .tabs, .actions, #print-controls { display: none !important; }
+    .panel { display: block !important; padding: 0; max-width: none; }
+    #panel-print { display: block; }
+    .print-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; padding: 8mm; }
+  }
+
+  .print-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .print-badge-wrap { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Passover Seder 2025 — Meal Management</div>
+    <div class="header-sub">March 31 – April 8 &nbsp;·&nbsp; Breakfast & Lunch</div>
+  </div>
+  <button class="sheet-btn" onclick="showSetup()">⚙ Google Sheets Setup</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('register')">Register Guest</div>
+  <div class="tab" onclick="switchTab('guests')">Guest List</div>
+  <div class="tab" onclick="switchTab('print')">Print Cards</div>
+  <div class="tab" onclick="switchTab('setup')">Setup Guide</div>
+</div>
+
+<!-- REGISTER -->
+<div class="panel active" id="panel-register">
+  <div class="section-title">Register New Guest</div>
+  <div class="section-desc">Add a walk-in guest or check in a pre-registered attendee. A unique QR code will be generated automatically.</div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>First Name *</label>
+      <input type="text" id="fname" placeholder="Sarah" autocomplete="given-name">
+    </div>
+    <div class="form-group">
+      <label>Last Name *</label>
+      <input type="text" id="lname" placeholder="Cohen" autocomplete="family-name">
+    </div>
+    <div class="form-group">
+      <label>Phone / Email (optional)</label>
+      <input type="text" id="contact" placeholder="For digital card delivery">
+    </div>
+    <div class="form-group">
+      <label>Registration Type</label>
+      <select id="regtype">
+        <option value="walkin">Walk-in (onsite today)</option>
+        <option value="prereg">Pre-registered</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Meal Plan</label>
+      <select id="mealplan">
+        <option value="full">Full plan — all 8 days</option>
+        <option value="custom">Custom days</option>
+      </select>
+    </div>
+    <div class="form-group" id="days-select" style="display:none">
+      <label>Select Days</label>
+      <div id="day-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input type="text" id="notes" placeholder="Dietary restrictions, accessibility…">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="registerGuest()">Register & Generate Card</button>
+    <button class="btn-secondary" onclick="clearForm()">Clear</button>
+    <span id="reg-status" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+
+  <!-- Card preview shown after registration -->
+  <div id="card-result" style="display:none;margin-top:32px;">
+    <div class="divider"></div>
+    <div class="section-title" style="margin-bottom:6px;">Card Generated</div>
+    <div class="section-desc">Print or email this card to the guest.</div>
+    <div class="card-preview-wrap">
+      <div class="card-preview">
+        <div class="card-preview-title">Guest Badge</div>
+        <div class="badge" id="preview-badge">
+          <div class="badge-header">
+            <div class="badge-event">Passover Seder 2025</div>
+            <div class="badge-dates">March 31 – April 8 · Houston</div>
+          </div>
+          <div class="badge-body">
+            <div class="badge-qr"><div id="qr-small"></div></div>
+            <div class="badge-info">
+              <div class="badge-name" id="badge-name-display">Guest Name</div>
+              <div class="badge-id-text" id="badge-id-display">ID: —</div>
+              <div class="badge-meals">
+                <div class="badge-meal-box">
+                  <div class="badge-meal-label">Breakfast</div>
+                  <div class="badge-meal-days" id="badge-b-days">8 days</div>
+                </div>
+                <div class="badge-meal-box">
+                  <div class="badge-meal-label">Lunch</div>
+                  <div class="badge-meal-days" id="badge-l-days">8 days</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="badge-footer">
+            <div class="badge-footer-text">Scan at each meal</div>
+            <div class="badge-footer-text" id="badge-plan-tag">Full plan</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn-primary" style="flex:1;font-size:12px;padding:9px" onclick="printBadge()">Print Badge</button>
+          <button class="btn-secondary" style="font-size:12px;padding:9px" onclick="copyDigitalLink()">Copy Digital Link</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:var(--deep)">Guest Details</div>
+        <table style="font-size:13px;width:100%;">
+          <tr><td style="padding:5px 0;color:var(--muted);width:110px;">Full name</td><td id="detail-name" style="font-weight:500"></td></tr>
+          <tr><td style="padding:5px 0;color:var(--muted)">Guest ID</td><td id="detail-id" style="font-family:monospace;font-size:12px"></td></tr>
+          <tr><td style="padding:5px 0;color:var(--muted)">Registered</td><td id="detail-type"></td></tr>
+          <tr><td style="padding:5px 0;color:var(--muted)">Meal plan</td><td id="detail-plan"></td></tr>
+          <tr><td style="padding:5px 0;color:var(--muted)">Contact</td><td id="detail-contact" style="font-size:12px"></td></tr>
+          <tr><td style="padding:5px 0;color:var(--muted)">Notes</td><td id="detail-notes" style="font-size:12px;color:var(--muted)"></td></tr>
+        </table>
+        <div style="margin-top:16px;padding:12px;background:var(--gold-pale);border-radius:8px;font-size:12px;color:var(--deep2);line-height:1.7;">
+          <strong>QR Data:</strong><br>
+          <span id="detail-qr-data" style="font-family:monospace;word-break:break-all;font-size:11px;color:var(--muted)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GUEST LIST -->
+<div class="panel" id="panel-guests">
+  <div class="list-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="section-title" style="margin-bottom:0">Guest List</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px;"><span id="total-count">0</span> registered guests</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input class="search-bar" type="text" id="search" placeholder="Search name or ID…" oninput="renderTable()">
+      <button class="btn-secondary" onclick="exportCSV()" style="font-size:12px;padding:9px 16px;">Export CSV</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Guest ID</th>
+          <th>Type</th>
+          <th>Meal Plan</th>
+          <th>Contact</th>
+          <th>Registered</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="guest-table-body"></tbody>
+    </table>
+  </div>
+  <div id="no-guests" style="text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;display:none;">
+    No guests registered yet. Use the Register tab to add guests.
+  </div>
+</div>
+
+<!-- PRINT -->
+<div class="panel" id="panel-print">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:16px;" id="print-controls">
+    <div>
+      <div class="section-title">Print Cards</div>
+      <div class="section-desc" style="margin-bottom:0">Badge-sized cards (3.375" × 2.125") — 3 per row on letter paper</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-secondary" onclick="generateAllBadges()">Refresh All</button>
+      <button class="btn-primary" onclick="window.print()">Print All Badges</button>
+    </div>
+  </div>
+  <div id="print-grid" class="print-grid"></div>
+  <div id="no-print" style="text-align:center;padding:60px;color:var(--muted);font-size:14px;">
+    Register guests to generate printable cards.
+  </div>
+</div>
+
+<!-- SETUP GUIDE -->
+<div class="panel" id="panel-setup">
+  <div class="section-title">Google Sheets Setup Guide</div>
+  <div class="section-desc">This tool saves all guest data to a Google Sheet that also powers the volunteer scanner. Follow these steps once before your event.</div>
+
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Create your Google Sheet</h4>
+        <p>Go to <strong>sheets.google.com</strong> and create a new spreadsheet. Name it <em>Passover 2025 Meal Tracker</em>. Add these exact column headers in row 1:<br><br>
+        <code>GuestID | FirstName | LastName | Contact | RegType | MealPlan | Days | RegisteredAt | Notes | B_Mar31 | L_Mar31 | B_Apr1 | L_Apr1 | B_Apr2 | L_Apr2 | B_Apr3 | L_Apr3 | B_Apr4 | L_Apr4 | B_Apr5 | L_Apr5 | B_Apr6 | L_Apr6 | B_Apr7 | L_Apr7 | B_Apr8 | L_Apr8</code>
+        </p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Deploy a Google Apps Script Web App</h4>
+        <p>In your Sheet, go to <strong>Extensions → Apps Script</strong>. Paste the script from the code block below. Click <strong>Deploy → New Deployment → Web App</strong>. Set "Who has access" to <em>Anyone</em>. Copy the Web App URL.</p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Enter your Web App URL</h4>
+        <p>Paste your Apps Script URL below. This connects the registration tool and the scanner app to your live Google Sheet.</p>
+        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="sheet-url-input" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px;font-size:13px;">
+          <button class="btn-primary" onclick="saveSheetURL()">Save URL</button>
+        </div>
+        <div id="sheet-url-status" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Apps Script code (copy this)</h4>
+        <p style="margin-bottom:10px;">Paste this into your Apps Script editor:</p>
+        <pre style="background:#1A1208;color:#E8C96A;padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;">const SHEET_NAME = 'Sheet1';
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_NAME);
+
+    if (data.action === 'register') {
+      const row = buildRow(data.guest);
+      sheet.appendRow(row);
+      return ok({guestId: data.guest.id});
+    }
+
+    if (data.action === 'scan') {
+      const rows = sheet.getDataRange().getValues();
+      const headers = rows[0];
+      const colKey = data.mealCol; // e.g. "B_Apr1"
+      const colIdx = headers.indexOf(colKey);
+      if (colIdx < 0) return err('Unknown meal column');
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === data.guestId) {
+          const cell = sheet.getRange(i+1, colIdx+1);
+          if (cell.getValue() === 'USED') return ok({status:'already_used', name: rows[i][1]+' '+rows[i][2]});
+          cell.setValue('USED');
+          return ok({status:'ok', name: rows[i][1]+' '+rows[i][2], plan: rows[i][5]});
+        }
+      }
+      return err('Guest not found');
+    }
+
+    if (data.action === 'lookup') {
+      const rows = sheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === data.guestId) {
+          return ok({found:true, guest: rowToObj(rows[0], rows[i])});
+        }
+      }
+      return ok({found:false});
+    }
+
+  } catch(e) { return err(e.toString()); }
+}
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const guests = rows.slice(1).map(r => rowToObj(headers, r));
+  return ContentService.createTextOutput(JSON.stringify({guests})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function buildRow(g) {
+  const base = [g.id, g.firstName, g.lastName, g.contact||'', g.regType, g.mealPlan, (g.days||[]).join(','), g.registeredAt, g.notes||''];
+  const mealCols = new Array(16).fill('');
+  return [...base, ...mealCols];
+}
+
+function rowToObj(headers, row) {
+  const obj = {};
+  headers.forEach((h,i) => obj[h] = row[i]);
+  return obj;
+}
+
+function ok(d) { return ContentService.createTextOutput(JSON.stringify({ok:true,...d})).setMimeType(ContentService.MimeType.JSON); }
+function err(msg) { return ContentService.createTextOutput(JSON.stringify({ok:false,error:msg})).setMimeType(ContentService.MimeType.JSON); }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+const DAYS = [
+  {key:'Mar31', label:'Mar 31'}, {key:'Apr1', label:'Apr 1'},
+  {key:'Apr2', label:'Apr 2'},  {key:'Apr3', label:'Apr 3'},
+  {key:'Apr4', label:'Apr 4'},  {key:'Apr5', label:'Apr 5'},
+  {key:'Apr6', label:'Apr 6'},  {key:'Apr7', label:'Apr 8'},
+];
+
+let guests = JSON.parse(localStorage.getItem('passover_guests') || '[]');
+let sheetURL = localStorage.getItem('passover_sheet_url') || '';
+
+// ── Init ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildDayCheckboxes();
+  if (document.getElementById('sheet-url-input')) {
+    document.getElementById('sheet-url-input').value = sheetURL;
+  }
+  updateSheetStatus();
+  renderTable();
+});
+
+document.getElementById('mealplan').addEventListener('change', function() {
+  document.getElementById('days-select').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+function buildDayCheckboxes() {
+  const wrap = document.getElementById('day-checkboxes');
+  if (!wrap) return;
+  DAYS.forEach(d => {
+    const lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;';
+    lbl.innerHTML = `<input type="checkbox" value="${d.key}" checked> ${d.label}`;
+    wrap.appendChild(lbl);
+  });
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['register','guests','print','setup'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if (tab === 'guests') renderTable();
+  if (tab === 'print') generateAllBadges();
+}
+
+function showSetup() { switchTab('setup'); }
+
+// ── Register ───────────────────────────────────────────────────────────
+function generateID() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = 'PS';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
+function getSelectedDays() {
+  const plan = document.getElementById('mealplan').value;
+  if (plan === 'full') return DAYS.map(d => d.key);
+  const checked = document.querySelectorAll('#day-checkboxes input:checked');
+  return Array.from(checked).map(c => c.value);
+}
+
+function registerGuest() {
+  const fn = document.getElementById('fname').value.trim();
+  const ln = document.getElementById('lname').value.trim();
+  if (!fn || !ln) { showToast('Please enter first and last name.'); return; }
+
+  const id = generateID();
+  const days = getSelectedDays();
+  const guest = {
+    id, firstName: fn, lastName: ln,
+    contact: document.getElementById('contact').value.trim(),
+    regType: document.getElementById('regtype').value,
+    mealPlan: document.getElementById('mealplan').value,
+    days,
+    notes: document.getElementById('notes').value.trim(),
+    registeredAt: new Date().toISOString()
+  };
+
+  guests.push(guest);
+  saveGuests();
+  syncToSheet(guest);
+  showCardResult(guest);
+  document.getElementById('reg-status').textContent = '✓ Registered';
+  setTimeout(() => document.getElementById('reg-status').textContent = '', 3000);
+}
+
+function clearForm() {
+  ['fname','lname','contact','notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('regtype').value = 'walkin';
+  document.getElementById('mealplan').value = 'full';
+  document.getElementById('days-select').style.display = 'none';
+  document.getElementById('card-result').style.display = 'none';
+}
+
+// ── Card Result ────────────────────────────────────────────────────────
+let currentQR = null;
+function showCardResult(guest) {
+  document.getElementById('card-result').style.display = 'block';
+  document.getElementById('badge-name-display').textContent = guest.firstName + ' ' + guest.lastName;
+  document.getElementById('badge-id-display').textContent = 'ID: ' + guest.id;
+  const daysLabel = guest.mealPlan === 'full' ? '8 days' : guest.days.length + ' days';
+  document.getElementById('badge-b-days').textContent = daysLabel;
+  document.getElementById('badge-l-days').textContent = daysLabel;
+  document.getElementById('badge-plan-tag').textContent = guest.mealPlan === 'full' ? 'Full plan' : 'Custom plan';
+
+  document.getElementById('detail-name').textContent = guest.firstName + ' ' + guest.lastName;
+  document.getElementById('detail-id').textContent = guest.id;
+  document.getElementById('detail-type').textContent = guest.regType === 'walkin' ? 'Walk-in' : 'Pre-registered';
+  document.getElementById('detail-plan').textContent = guest.mealPlan === 'full' ? 'All 8 days' : guest.days.join(', ');
+  document.getElementById('detail-contact').textContent = guest.contact || '—';
+  document.getElementById('detail-notes').textContent = guest.notes || '—';
+
+  const qrData = JSON.stringify({id: guest.id, name: guest.firstName + ' ' + guest.lastName, days: guest.days});
+  document.getElementById('detail-qr-data').textContent = qrData;
+
+  const qrContainer = document.getElementById('qr-small');
+  qrContainer.innerHTML = '';
+  currentQR = new QRCode(qrContainer, {
+    text: qrData, width: 72, height: 72,
+    colorDark: '#1A1208', colorLight: '#FAF4E2',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('card-result').scrollIntoView({behavior:'smooth', block:'nearest'});
+  showToast('✓ ' + guest.firstName + ' registered! Card ready.');
+}
+
+function printBadge() {
+  window.print();
+}
+
+function copyDigitalLink() {
+  const id = document.getElementById('detail-id').textContent;
+  navigator.clipboard.writeText('Guest ID: ' + id + ' — Passover Seder 2025').then(() => {
+    showToast('Guest ID copied to clipboard');
+  });
+}
+
+// ── Guest Table ────────────────────────────────────────────────────────
+function renderTable() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  const filtered = guests.filter(g =>
+    (g.firstName+' '+g.lastName).toLowerCase().includes(q) ||
+    g.id.toLowerCase().includes(q)
+  );
+
+  const body = document.getElementById('guest-table-body');
+  if (!body) return;
+  document.getElementById('total-count').textContent = guests.length;
+
+  if (filtered.length === 0) {
+    body.innerHTML = '';
+    document.getElementById('no-guests').style.display = 'block';
+    return;
+  }
+  document.getElementById('no-guests').style.display = 'none';
+
+  body.innerHTML = filtered.map(g => `
+    <tr>
+      <td><strong>${g.firstName} ${g.lastName}</strong></td>
+      <td><span class="badge-id">${g.id}</span></td>
+      <td><span class="tag ${g.regType === 'walkin' ? 'tag-walkin' : 'tag-prereg'}">${g.regType === 'walkin' ? 'Walk-in' : 'Pre-reg'}</span></td>
+      <td><span class="tag ${g.mealPlan === 'full' ? 'tag-full' : ''}">${g.mealPlan === 'full' ? 'Full · 8 days' : g.days.length + ' days'}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${g.contact || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${new Date(g.registeredAt).toLocaleDateString()}</td>
+      <td><button class="btn-danger" onclick="removeGuest('${g.id}')">Remove</button></td>
+    </tr>
+  `).join('');
+}
+
+function removeGuest(id) {
+  if (!confirm('Remove this guest?')) return;
+  guests = guests.filter(g => g.id !== id);
+  saveGuests();
+  renderTable();
+}
+
+// ── Print Badges ───────────────────────────────────────────────────────
+function generateAllBadges() {
+  const grid = document.getElementById('print-grid');
+  const noprint = document.getElementById('no-print');
+  if (!grid) return;
+
+  if (guests.length === 0) {
+    grid.innerHTML = '';
+    noprint.style.display = 'block';
+    return;
+  }
+  noprint.style.display = 'none';
+  grid.innerHTML = '';
+
+  guests.forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'print-badge-wrap';
+    wrap.style.cssText = 'width:320px;';
+
+    const daysLabel = g.mealPlan === 'full' ? '8 days' : g.days.length + ' days';
+    wrap.innerHTML = `
+      <div class="badge">
+        <div class="badge-header">
+          <div class="badge-event">Passover Seder 2025</div>
+          <div class="badge-dates">March 31 – April 8 · Houston</div>
+        </div>
+        <div class="badge-body">
+          <div class="badge-qr" id="pqr-${g.id}"></div>
+          <div class="badge-info">
+            <div class="badge-name">${g.firstName} ${g.lastName}</div>
+            <div class="badge-id-text">ID: ${g.id}</div>
+            <div class="badge-meals">
+              <div class="badge-meal-box">
+                <div class="badge-meal-label">Breakfast</div>
+                <div class="badge-meal-days">${daysLabel}</div>
+              </div>
+              <div class="badge-meal-box">
+                <div class="badge-meal-label">Lunch</div>
+                <div class="badge-meal-days">${daysLabel}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="badge-footer">
+          <div class="badge-footer-text">Scan at each meal</div>
+          <div class="badge-footer-text">${g.mealPlan === 'full' ? 'Full plan' : 'Custom'}</div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(wrap);
+
+    setTimeout(() => {
+      const qrData = JSON.stringify({id: g.id, name: g.firstName+' '+g.lastName, days: g.days});
+      new QRCode(document.getElementById('pqr-'+g.id), {
+        text: qrData, width: 64, height: 64,
+        colorDark: '#1A1208', colorLight: '#FAF4E2',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }, 50);
+  });
+}
+
+// ── Google Sheets Sync ─────────────────────────────────────────────────
+async function syncToSheet(guest) {
+  if (!sheetURL) return;
+  try {
+    await fetch(sheetURL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'register', guest})
+    });
+  } catch(e) { console.warn('Sheet sync failed:', e); }
+}
+
+function saveSheetURL() {
+  sheetURL = document.getElementById('sheet-url-input').value.trim();
+  localStorage.setItem('passover_sheet_url', sheetURL);
+  updateSheetStatus();
+  showToast('Sheet URL saved!');
+}
+
+function updateSheetStatus() {
+  const el = document.getElementById('sheet-url-status');
+  if (!el) return;
+  el.textContent = sheetURL ? '✓ URL saved: ' + sheetURL.substring(0,60) + '…' : 'No URL set — data saved locally only.';
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────
+function saveGuests() {
+  localStorage.setItem('passover_guests', JSON.stringify(guests));
+}
+
+function exportCSV() {
+  if (guests.length === 0) { showToast('No guests to export.'); return; }
+  const headers = ['GuestID','FirstName','LastName','Contact','RegType','MealPlan','Days','RegisteredAt','Notes'];
+  const rows = guests.map(g => [g.id, g.firstName, g.lastName, g.contact||'', g.regType, g.mealPlan, (g.days||[]).join(';'), g.registeredAt, g.notes||''].map(v => `"${v}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'passover_guests_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
