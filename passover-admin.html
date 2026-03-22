@@ -208,6 +208,38 @@ tbody td{padding:10px 11px;font-size:13px;border-bottom:1px solid var(--border);
 </div>
 
 <script>
+const DAYS = [
+  {key:'Mar31',label:'Mar 31'},{key:'Apr1',label:'Apr 1'},
+  {key:'Apr2',label:'Apr 2'},{key:'Apr3',label:'Apr 3'},
+  {key:'Apr4',label:'Apr 4'},{key:'Apr5',label:'Apr 5'},
+  {key:'Apr6',label:'Apr 6'},{key:'Apr7',label:'Apr 7'},
+  {key:'Apr8',label:'Apr 8'},
+];
+let sheetURL = localStorage.getItem('passover_sheet_url') || '';
+let guests = [];
+let localGuests = JSON.parse(localStorage.getItem('passover_guests') || '[]');
+let selectedDay = autoDay();
+let activeFilter = 'all';
+let overrideTarget = null;
+let refreshTimer = null;
+
+function autoDay() {
+  const today = new Date();
+  const mo = today.getMonth()+1, da = today.getDate();
+  if (mo === 3 && da === 31) return 'Mar31';
+  if (mo === 4 && da >= 1 && da <= 8) return 'Apr' + da;
+  return 'Mar31';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildDayNav();
+  if (sheetURL) {
+    document.getElementById('sheet-url').value = sheetURL;
+    loadSheetData();
+  } else {
+    loadLocalData();
+  }
+  updateSheetStatus();
   startAutoRefresh();
 });
 
@@ -483,10 +515,6 @@ function download(csv, filename) {
   a.download = filename;
   a.click();
 }
-</script>
-</body>
-</html>
-
 </script>
 </body>
 </html>
