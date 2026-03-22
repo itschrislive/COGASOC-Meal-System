@@ -432,8 +432,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     guests.push({id:'PSTEST1',firstName:'Test',lastName:'Guest',contact:'test@test.com',regType:'walkin',mealPlan:'full',days:DAYS.map(d=>d.key),notes:'TEST RECORD',registeredAt:new Date().toISOString()});
     saveGuests();
   }
+  document.getElementById('mealplan').addEventListener('change',function(){document.getElementById('days-select').style.display=this.value==='custom'?'block':'none';});
 });
-document.getElementById('mealplan').addEventListener('change',function(){document.getElementById('days-select').style.display=this.value==='custom'?'block':'none';});
 
 function buildDayCheckboxes(){const w=document.getElementById('day-checkboxes');if(!w)return;DAYS.forEach(d=>{const l=document.createElement('label');l.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;';l.innerHTML=`<input type="checkbox" value="${d.key}" checked> ${d.label}`;w.appendChild(l);});}
 
@@ -501,16 +501,17 @@ body{margin:0;background:#fff;display:flex;justify-content:center;align-items:fl
 function printBadge(){
   const badge=document.getElementById('preview-badge');
   const w=window.open('','_blank','width=420,height=340');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Badge</title>${badgePrintStyles()}</head><body>${badge.outerHTML}<script>window.onload=()=>{setTimeout(()=>{window.print();window.close();},500);}<\/script></body></html>`);
+  const styles=badgePrintStyles();
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Badge</title>'+styles+'</head><body>'+badge.outerHTML+'<sc'+'ript>window.onload=()=>{setTimeout(()=>{window.print();window.close();},500);}<'+'/script></body></html>');
   w.document.close();}
 
 function printBadgesOnly(){
   const grid=document.getElementById('print-grid');
   if(!grid||grid.children.length===0){showToast('No badges to print.');return;}
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>All Badges</title>${badgePrintStyles().replace('3.375in 2.125in','letter').replace('padding:10mm','padding:0')}
-  <style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:8mm;}}</style>
-  </head><body><div class="grid">${grid.innerHTML}</div><script>window.onload=()=>{setTimeout(()=>{window.print();},600);}<\/script></body></html>`);
+  const styles=badgePrintStyles().replace('3.375in 2.125in','letter').replace('padding:10mm','padding:0');
+  const extra='<style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:8mm;}}</style>';
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>All Badges</title>'+styles+extra+'</head><body><div class="grid">'+grid.innerHTML+'</div><sc'+'ript>window.onload=()=>{setTimeout(()=>{window.print();},600);}<'+'/script></body></html>');
   w.document.close();}
 
 function openDigitalBadge(){
@@ -548,15 +549,29 @@ function removeGuest(id){if(!confirm('Remove this guest?'))return;guests=guests.
 
 function makeBadgeHTML(g){
   const dl=g.mealPlan==='full'?'8 days':g.days.length+' days';
-  return `<div class="id-card">
-    <div class="id-card-top">
-      
-      <div class="id-card-org"><div class="id-card-org-name">COGASOC</div><div class="id-card-org-sub">COGASOC Registration Portal</div></div>
-      <div class="id-card-gold-bar"></div>
-    </div>
-    <div class="id-card-arc"></div>
-    <div class="id-card-body">
-      <div class="id-card-qr" id="BQR-${g.id}"></div>
+  const parts=[
+    '<div class="id-card">',
+    '<div class="id-card-top">',
+    '<div class="id-card-org"><div class="id-card-org-name">COGASOC</div><div class="id-card-org-sub">COGASOC Registration Portal</div></div>',
+    '<div class="id-card-gold-bar"></div>',
+    '</div>',
+    '<div class="id-card-arc"></div>',
+    '<div class="id-card-body">',
+    '<div class="id-card-qr" id="BQR-'+g.id+'"></div>',
+    '<div class="id-card-info">',
+    '<div class="id-card-name">'+g.firstName+' '+g.lastName+'</div>',
+    '<div class="id-card-id">ID: '+g.id+'</div>',
+    '<div class="id-card-meals">',
+    '<div class="id-card-meal"><div class="id-card-meal-lbl">Breakfast</div><div class="id-card-meal-val">'+dl+'</div></div>',
+    '<div class="id-card-meal"><div class="id-card-meal-lbl">Lunch</div><div class="id-card-meal-val">'+dl+'</div></div>',
+    '</div></div></div>',
+    '<div class="id-card-footer">',
+    '<div class="id-card-footer-txt">Scan at each meal</div>',
+    '<div class="id-card-footer-txt">'+(g.mealPlan==='full'?'Full plan':'Custom')+'</div>',
+    '</div></div>'
+  ];
+  return parts.join('');
+}"></div>
       <div class="id-card-info">
         <div class="id-card-name">${g.firstName} ${g.lastName}</div>
         <div class="id-card-id">ID: ${g.id}</div>
@@ -584,8 +599,7 @@ function generateAllBadges(){
 
 function runBulkImport(){
   const raw=document.getElementById('import-text').value.trim();if(!raw){showToast('Paste some names first.');return;}
-  const lines=raw.split('
-').map(l=>l.trim()).filter(l=>l.length>0),imported=[];
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0),imported=[];
   lines.forEach(line=>{let fn,ln,contact='';
     if(line.includes(',')){const p=line.split(',').map(x=>x.trim());fn=p[0];ln=p[1]||'';contact=p[2]||'';}
     else{const si=line.indexOf(' ');if(si===-1){fn=line;ln='';}else{fn=line.slice(0,si);ln=line.slice(si+1);}}
@@ -608,9 +622,9 @@ function renderImportBadges(list){
 function printImportedBadges(){
   const grid=document.getElementById('import-badge-grid');if(!grid||grid.children.length===0)return;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Badges</title>${badgePrintStyles().replace('3.375in 2.125in','letter').replace('padding:10mm','padding:0')}
-  <style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:8mm;}}</style>
-  </head><body><div class="grid">${grid.innerHTML}</div><script>window.onload=()=>{setTimeout(()=>{window.print();},600);}<\/script></body></html>`);
+  const styles=badgePrintStyles().replace('3.375in 2.125in','letter').replace('padding:10mm','padding:0');
+  const extra='<style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:8mm;}}</style>';
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Badges</title>'+styles+extra+'</head><body><div class="grid">'+grid.innerHTML+'</div><sc'+'ript>window.onload=()=>{setTimeout(()=>{window.print();},600);}<'+'/script></body></html>');
   w.document.close();}
 
 async function syncToSheet(guest){if(!sheetURL)return;try{await fetch(sheetURL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'register',guest})});}catch(e){console.warn('Sheet sync failed:',e);}}
