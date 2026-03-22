@@ -414,36 +414,63 @@ tbody td { padding:11px 12px; font-size:13px; border-bottom:1px solid var(--bord
 
 <!-- SETUP -->
 <div class="panel" id="panel-setup">
-  <div class="section-title">Google Sheets Setup</div>
-  <div class="section-desc">Connect a Google Sheet so all devices share live data in real time.</div>
+  <div class="section-title">Setup &amp; Connections</div>
+  <div class="section-desc">Connect your master Google Sheet so all devices read and write live data.</div>
+
   <div class="setup-step">
     <div class="step-num">1</div>
     <div class="step-content">
-      <h4>Create your Google Sheet</h4>
-      <p>Go to <strong>sheets.google.com</strong>, create a sheet named <em>COGASOC Registration</em>. Row 1 headers:<br><br>
-      <code>GuestID | FirstName | LastName | Email | Phone | Tabernacle | AgeGroup | PaymentType | BalanceNotes | CheckinStatus | RegisteredAt | Notes | B_Mar31 | L_Mar31 | B_Apr1 | L_Apr1 | B_Apr2 | L_Apr2 | B_Apr3 | L_Apr3 | B_Apr4 | L_Apr4 | B_Apr5 | L_Apr5 | B_Apr6 | L_Apr6 | B_Apr7 | L_Apr7 | B_Apr8 | L_Apr8</code></p>
+      <h4>Set up your Google Sheet</h4>
+      <p>Create a Google Sheet with your master member list. Make sure Row 1 has these exact headers:<br><br>
+      <code>GuestID | FirstName | LastName | Email | Phone | Tabernacle | AgeGroup | PaymentType | BalanceNotes | CheckinStatus | RegisteredAt | Notes</code><br><br>
+      You can also add meal columns after Notes: <code>B_Mar31 | L_Mar31 | B_Apr1 | L_Apr1 ...</code> for daily meal tracking.</p>
     </div>
   </div>
+
   <div class="setup-step">
     <div class="step-num">2</div>
     <div class="step-content">
-      <h4>Deploy Apps Script</h4>
-      <p>In your Sheet: <strong>Extensions &rarr; Apps Script</strong>. Paste the script below. <strong>Deploy &rarr; New Deployment &rarr; Web App</strong>. Access: <em>Anyone</em>. Copy the URL.</p>
+      <h4>Publish your sheet as CSV (for reading)</h4>
+      <p>In your Google Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>. Choose <em>Sheet1</em> and <em>Comma-separated values (.csv)</em>. Click <strong>Publish</strong>. Copy the URL it gives you — paste it below as the <strong>CSV URL</strong>.</p>
     </div>
   </div>
+
   <div class="setup-step">
     <div class="step-num">3</div>
     <div class="step-content">
-      <h4>Paste your Web App URL</h4>
-      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
-        <input type="text" id="sheet-url-input" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;outline:none;">
-        <button class="btn-primary" onclick="saveSheetURL()">Save</button>
-      </div>
-      <div id="sheet-url-status" style="font-size:12px;color:var(--muted);margin-top:6px;font-weight:600;"></div>
+      <h4>Deploy Apps Script (for writing)</h4>
+      <p>In your Sheet: <strong>Extensions &rarr; Apps Script</strong>. Paste the script below. <strong>Deploy &rarr; New Deployment &rarr; Web App</strong>. Access: <em>Anyone</em>. Copy the URL — paste it below as the <strong>Apps Script URL</strong>.</p>
     </div>
   </div>
+
   <div class="setup-step">
     <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>Enter your URLs here</h4>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:6px;">CSV URL (for reading all members)</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="csv-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" style="flex:1;min-width:260px;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;outline:none;">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:6px;">Apps Script URL (for saving new registrations)</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="sheet-url-input" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;outline:none;">
+          </div>
+        </div>
+        <div>
+          <button class="btn-primary" onclick="saveSheetURL()">Save &amp; Connect</button>
+          <button class="btn-secondary" style="margin-left:10px;" onclick="fetchFromSheet(function(){renderMemberList();renderCheckinList();showToast('Refreshed — '+members.length+' members loaded');})">Test Connection</button>
+        </div>
+        <div id="sheet-url-status" style="font-size:12px;color:var(--muted);font-weight:600;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="step-num">5</div>
     <div class="step-content">
       <h4>Apps Script — copy this</h4>
       <pre style="background:var(--navy);color:var(--gold2);padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-top:8px;">const SN = 'Sheet1';
@@ -458,10 +485,11 @@ function doPost(e) {
     }
     if (d.action==='checkin') {
       const rows=s.getDataRange().getValues(), hdr=rows[0];
-      for(let i=1;i<rows.length;i++) {
+      const ci=hdr.indexOf('CheckinStatus');
+      for(let i=1;i<rows.length;i++){
         if(rows[i][0]===d.guestId){
-          s.getRange(i+1,hdr.indexOf('CheckinStatus')+1).setValue('checkedin');
-          return R({ok:true,name:rows[i][1]+' '+rows[i][2]});
+          if(ci>=0) s.getRange(i+1,ci+1).setValue('checkedin');
+          return R({ok:true});
         }
       }
       return R({ok:false,error:'Not found'});
@@ -482,11 +510,6 @@ function doPost(e) {
     }
   } catch(err){return R({ok:false,error:err.toString()});}
 }
-function doGet(){
-  const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SN);
-  const rows=s.getDataRange().getValues(), hdr=rows[0];
-  return ContentService.createTextOutput(JSON.stringify({guests:rows.slice(1).map(r=>{const o={};hdr.forEach((h,i)=>o[h]=r[i]);return o;})})).setMimeType(ContentService.MimeType.JSON);
-}
 function R(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON);}</pre>
     </div>
   </div>
@@ -500,12 +523,15 @@ var AGE = {adult:'Adult', senior:'Senior', child:'Child', '':'—'};
 var PAY = {full:'Paid in Full', balance:'Paying Balance', '':'—'};
 var members = JSON.parse(localStorage.getItem('cogasoc_members') || '[]');
 var sheetURL = localStorage.getItem('passover_sheet_url') || '';
+var csvURL = localStorage.getItem('passover_csv_url') || '';
 var selPayment = '';
 var currentResultId = '';
 
 window.addEventListener('DOMContentLoaded', function() {
   var inp = document.getElementById('sheet-url-input');
   if (inp) inp.value = sheetURL;
+  var csvInp = document.getElementById('csv-url-input');
+  if (csvInp) csvInp.value = csvURL;
   updateSheetStatus();
   if (!members.find(function(g){ return g.id==='PSTEST1'; })) {
     members.push({id:'PSTEST1',firstName:'Test',lastName:'Guest',email:'test@cogasoc.org',phone:'555-0000',tabernacle:'Atlanta',ageGroup:'adult',paymentType:'full',balanceNotes:'',checkinStatus:'pending',notes:'TEST RECORD',registeredAt:new Date().toISOString()});
@@ -517,45 +543,110 @@ window.addEventListener('DOMContentLoaded', function() {
 var sheetLoading = false;
 
 function fetchFromSheet(callback) {
-  if (!sheetURL || sheetLoading) return;
+  var url = csvURL || sheetURL;
+  if (!url || sheetLoading) { if (callback) callback(); return; }
   sheetLoading = true;
   showSyncStatus('Syncing with sheet...');
-  fetch(sheetURL + '?t=' + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (data.guests && data.guests.length > 0) {
-        var sheetMembers = data.guests.map(function(g){
-          return {
-            id: g.GuestID || '',
-            firstName: g.FirstName || '',
-            lastName: g.LastName || '',
-            email: g.Email || '',
-            phone: g.Phone || '',
-            tabernacle: g.Tabernacle || '',
-            ageGroup: g.AgeGroup || '',
-            paymentType: g.PaymentType || '',
-            balanceNotes: g.BalanceNotes || '',
-            checkinStatus: g.CheckinStatus || 'pending',
-            notes: g.Notes || '',
-            registeredAt: g.RegisteredAt || ''
-          };
-        }).filter(function(m){ return m.id && m.firstName; });
-        var sheetIds = sheetMembers.map(function(m){ return m.id; });
-        var localOnly = members.filter(function(m){ return !sheetIds.includes(m.id); });
-        members = sheetMembers.concat(localOnly);
-        saveMembers();
-        showSyncStatus('Synced — ' + members.length + ' members loaded');
-      } else {
-        showSyncStatus('Connected — no members in sheet yet');
-      }
-      sheetLoading = false;
-      if (callback) callback();
-    })
-    .catch(function(err){
-      showSyncStatus('Sheet unavailable — showing local data');
-      sheetLoading = false;
-      if (callback) callback();
-    });
+  // If it's a published CSV URL, parse it directly
+  if (url.indexOf('output=csv') >= 0 || url.indexOf('.csv') >= 0) {
+    fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now())
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var rows = parseCSV(text);
+        if (rows.length > 1) {
+          var headers = rows[0].map(function(h){ return h.trim(); });
+          var sheetMembers = rows.slice(1).map(function(row){
+            var g = {};
+            headers.forEach(function(h,i){ g[h] = (row[i]||'').trim(); });
+            return {
+              id: g.GuestID || g.ID || g.id || '',
+              firstName: g.FirstName || g['First Name'] || g.firstName || '',
+              lastName: g.LastName || g['Last Name'] || g.lastName || '',
+              email: g.Email || g.email || '',
+              phone: g.Phone || g.phone || '',
+              tabernacle: g.Tabernacle || g.tabernacle || '',
+              ageGroup: (g.AgeGroup || g['Age Group'] || g.ageGroup || '').toLowerCase(),
+              paymentType: (g.PaymentType || g['Payment Type'] || g.paymentType || '').toLowerCase(),
+              balanceNotes: g.BalanceNotes || g['Balance Notes'] || g.balanceNotes || '',
+              checkinStatus: (g.CheckinStatus || g['Checkin Status'] || g.checkinStatus || 'pending').toLowerCase(),
+              notes: g.Notes || g.notes || '',
+              registeredAt: g.RegisteredAt || g['Registered At'] || g.registeredAt || ''
+            };
+          }).filter(function(m){ return m.id && m.firstName; });
+          var sheetIds = sheetMembers.map(function(m){ return m.id; });
+          var localOnly = members.filter(function(m){ return !sheetIds.includes(m.id) && m.id !== 'PSTEST1'; });
+          members = sheetMembers.concat(localOnly);
+          saveMembers();
+          showSyncStatus('Synced — ' + members.length + ' members loaded');
+        } else {
+          showSyncStatus('Sheet connected — no data found yet');
+        }
+        sheetLoading = false;
+        if (callback) callback();
+      })
+      .catch(function(err){
+        showSyncStatus('Could not reach sheet — showing local data');
+        sheetLoading = false;
+        if (callback) callback();
+      });
+  } else {
+    // Apps Script JSON endpoint
+    fetch(url + '?t=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.guests && data.guests.length > 0) {
+          var sheetMembers = data.guests.map(function(g){
+            return {
+              id: g.GuestID || '',
+              firstName: g.FirstName || '',
+              lastName: g.LastName || '',
+              email: g.Email || '',
+              phone: g.Phone || '',
+              tabernacle: g.Tabernacle || '',
+              ageGroup: (g.AgeGroup||'').toLowerCase(),
+              paymentType: (g.PaymentType||'').toLowerCase(),
+              balanceNotes: g.BalanceNotes || '',
+              checkinStatus: (g.CheckinStatus||'pending').toLowerCase(),
+              notes: g.Notes || '',
+              registeredAt: g.RegisteredAt || ''
+            };
+          }).filter(function(m){ return m.id && m.firstName; });
+          var sheetIds = sheetMembers.map(function(m){ return m.id; });
+          var localOnly = members.filter(function(m){ return !sheetIds.includes(m.id) && m.id !== 'PSTEST1'; });
+          members = sheetMembers.concat(localOnly);
+          saveMembers();
+          showSyncStatus('Synced — ' + members.length + ' members loaded');
+        } else {
+          showSyncStatus('Connected — no members yet');
+        }
+        sheetLoading = false;
+        if (callback) callback();
+      })
+      .catch(function(err){
+        showSyncStatus('Sheet unavailable — showing local data');
+        sheetLoading = false;
+        if (callback) callback();
+      });
+  }
+}
+
+function parseCSV(text) {
+  var rows = [];
+  var lines = text.split('
+');
+  lines.forEach(function(line) {
+    if (!line.trim()) return;
+    var row = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    row.push(cur);
+    rows.push(row);
+  });
+  return rows;
 }
 
 function showSyncStatus(msg) {
@@ -901,8 +992,22 @@ async function syncCheckin(id) {
   try{await fetch(sheetURL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'checkin',guestId:id})});}
   catch(e){console.warn('Checkin sync failed',e);}
 }
-function saveSheetURL(){sheetURL=document.getElementById('sheet-url-input').value.trim();localStorage.setItem('passover_sheet_url',sheetURL);updateSheetStatus();showToast('Saved!');}
-function updateSheetStatus(){var el=document.getElementById('sheet-url-status');if(!el)return;el.textContent=sheetURL?'Connected: '+sheetURL.substring(0,55)+'...':'Not connected — saving locally only.';}
+function saveSheetURL(){
+  sheetURL=document.getElementById('sheet-url-input').value.trim();
+  localStorage.setItem('passover_sheet_url',sheetURL);
+  var csvInp=document.getElementById('csv-url-input');
+  if(csvInp){ csvURL=csvInp.value.trim(); localStorage.setItem('passover_csv_url',csvURL); }
+  updateSheetStatus();
+  showToast('URLs saved!');
+  if(csvURL||sheetURL) fetchFromSheet(function(){ renderMemberList(); renderCheckinList(); });
+}
+function updateSheetStatus(){
+  var el=document.getElementById('sheet-url-status');
+  if(!el)return;
+  if(csvURL) el.textContent='CSV connected: '+csvURL.substring(0,55)+'...';
+  else if(sheetURL) el.textContent='Script connected: '+sheetURL.substring(0,55)+'...';
+  else el.textContent='Not connected — data saved locally only.';
+}
 function saveMembers(){localStorage.setItem('cogasoc_members',JSON.stringify(members));}
 
 function exportCSV(){
