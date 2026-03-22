@@ -184,7 +184,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);min
 <div class="header">
   <div class="header-brand">
     
-    <div><div class="header-title">Meal Scanner</div><div class="header-sub">Passover 2025</div></div>
+    <div><div class="header-title">Meal Scanner</div><div class="header-sub">COGASOC Registration Portal</div></div>
   </div>
   <div class="meal-selector">
     <button class="meal-btn active" id="btn-b" onclick="setMeal('breakfast')">Breakfast</button>
@@ -344,7 +344,7 @@ let lastScannedId = '';
 let lastScanTime = 0;
 let stats = {approved:0, denied:0};
 let scanLog = [];
-let localGuests = JSON.parse(localStorage.getItem('passover_guests') || '[]');
+let localGuests = JSON.parse(localStorage.getItem('cogasoc_members') || '[]');
 
 // ── Init ───────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

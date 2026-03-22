@@ -217,7 +217,7 @@ const DAYS = [
 ];
 let sheetURL = localStorage.getItem('passover_sheet_url') || '';
 let guests = [];
-let localGuests = JSON.parse(localStorage.getItem('passover_guests') || '[]');
+let localGuests = JSON.parse(localStorage.getItem('cogasoc_members') || '[]');
 let selectedDay = autoDay();
 let activeFilter = 'all';
 let overrideTarget = null;
@@ -290,7 +290,7 @@ function loadLocalData() {
     scans['L_'+d.key] = ls;
   });
   guests = localGuests.map(g => {
-    const obj = {GuestID: g.id, FirstName: g.firstName, LastName: g.lastName, MealPlan: g.mealPlan, Days: (g.days||[]).join(','), RegType: g.regType};
+    const obj = {GuestID: g.id, FirstName: g.firstName, LastName: g.lastName, Tabernacle: g.tabernacle||'', AgeGroup: g.ageGroup||'', PaymentType: g.paymentType||'', CheckinStatus: g.checkinStatus||'pending'};
     DAYS.forEach(d => {
       obj['B_'+d.key] = scans['B_'+d.key][g.id] ? 'USED' : '';
       obj['L_'+d.key] = scans['L_'+d.key][g.id] ? 'USED' : '';
