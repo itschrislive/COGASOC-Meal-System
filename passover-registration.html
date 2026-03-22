@@ -771,8 +771,9 @@ function getCardStyles() {
 
 function printSingleBadge() {
   var badge=document.getElementById('preview-badge');
-  var w=window.open('','_blank','width=420,height=340');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardStyles()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:4mm;}}</style></head><body>'+badge.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
+  var w=window.open('','_blank','width=440,height=320');
+  var pageStyle='@page{size:3.375in 2.125in;margin:0;}body{margin:0;padding:0;background:#fff;display:flex;align-items:center;justify-content:center;width:3.375in;height:2.125in;overflow:hidden;}';
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardStyles()+'<style>'+pageStyle+'</style></head><body>'+badge.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
   w.document.close();
 }
 
@@ -787,16 +788,16 @@ function printGridBadges(gridId) {
 function openDigitalBadge() {
   var id=document.getElementById('d-id').textContent;
   var name=document.getElementById('d-name').textContent;
-  var base=window.location.href.replace('passover-registration.html','passover-scanner.html');
-  window.open(base+'?guestid='+encodeURIComponent(id)+'&name='+encodeURIComponent(name),'_blank');
+  var base=window.location.href.replace('passover-registration.html','passover-badge.html');
+  window.open(base+'?id='+encodeURIComponent(id)+'&name='+encodeURIComponent(name),'_blank');
 }
 
 function copyDigitalLink() {
   var id=document.getElementById('d-id').textContent;
   var name=document.getElementById('d-name').textContent;
-  var base=window.location.href.replace('passover-registration.html','passover-scanner.html');
-  var url=base+'?guestid='+encodeURIComponent(id)+'&name='+encodeURIComponent(name);
-  navigator.clipboard.writeText(url).then(function(){showToast('Link copied!');}).catch(function(){prompt('Copy this link:',url);});
+  var base=window.location.href.replace('passover-registration.html','passover-badge.html');
+  var url=base+'?id='+encodeURIComponent(id)+'&name='+encodeURIComponent(name);
+  navigator.clipboard.writeText(url).then(function(){showToast('Link copied! Send this to the member.');}).catch(function(){prompt('Copy this link:',url);});
 }
 
 /* ── BULK IMPORT ── */

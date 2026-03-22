@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COGASOC Member Badge</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#1B2E4B; --navy2:#2A4570; --navy3:#3D6494; --navy-pale:#EBF0F7;
+  --gold:#C9991A; --gold2:#E8B830; --gold-pale:#FDF6E3;
+  --brown:#7A5C3A; --brown2:#A8835A;
+  --white:#FFFFFF; --off:#F8F6F2;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'Nunito',sans-serif;
+  background:var(--navy);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 16px;
+}
+
+.page-logo {
+  font-family:'Cormorant Garamond',serif;
+  color:var(--gold2);
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  margin-bottom:6px;
+  text-align:center;
+}
+.page-sub {
+  font-size:11px;
+  color:rgba(255,255,255,0.4);
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  margin-bottom:32px;
+  text-align:center;
+}
+
+/* DIGITAL CARD */
+.digital-card {
+  background:var(--white);
+  border-radius:20px;
+  overflow:hidden;
+  width:100%;
+  max-width:380px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+.card-header {
+  background:var(--navy2);
+  padding:22px 24px 18px;
+  position:relative;
+  border-bottom:4px solid var(--gold);
+}
+.card-header-org {
+  font-family:'Cormorant Garamond',serif;
+  color:var(--gold2);
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:0.05em;
+}
+.card-header-event {
+  font-size:10px;
+  color:rgba(255,255,255,0.5);
+  text-transform:uppercase;
+  letter-spacing:0.1em;
+  margin-top:3px;
+}
+
+.card-body {
+  padding:28px 24px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+
+.qr-wrap {
+  background:var(--white);
+  border:3px solid var(--navy-pale);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:20px;
+  box-shadow:0 4px 16px rgba(27,46,75,0.1);
+}
+
+.member-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:30px;
+  font-weight:700;
+  color:var(--navy);
+  line-height:1.1;
+  margin-bottom:6px;
+}
+.member-id {
+  font-family:monospace;
+  font-size:13px;
+  color:var(--brown2);
+  font-weight:700;
+  letter-spacing:0.08em;
+  margin-bottom:16px;
+  background:var(--navy-pale);
+  padding:4px 12px;
+  border-radius:20px;
+  display:inline-block;
+}
+
+.badge-row {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.badge-chip {
+  background:var(--navy-pale);
+  color:var(--navy2);
+  border-radius:20px;
+  padding:5px 14px;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.badge-chip.gold {
+  background:var(--gold-pale);
+  color:var(--brown);
+}
+
+.card-footer {
+  background:var(--gold-pale);
+  border-top:1px solid rgba(201,153,26,0.2);
+  padding:12px 24px;
+  text-align:center;
+  font-size:11px;
+  color:var(--brown2);
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+
+.instructions {
+  margin-top:24px;
+  max-width:380px;
+  width:100%;
+  text-align:center;
+}
+.instructions p {
+  font-size:12px;
+  color:rgba(255,255,255,0.4);
+  line-height:1.7;
+}
+.instructions strong {
+  color:rgba(255,255,255,0.7);
+}
+
+.save-btn {
+  margin-top:16px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.8);
+  padding:11px 28px;
+  border-radius:10px;
+  font-family:'Nunito',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  letter-spacing:0.02em;
+}
+.save-btn:hover { background:rgba(255,255,255,0.14); }
+
+.not-found {
+  text-align:center;
+  color:rgba(255,255,255,0.5);
+  padding:40px 20px;
+}
+.not-found h2 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;
+  color:rgba(255,255,255,0.7);
+  margin-bottom:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="page-logo">COGASOC</div>
+<div class="page-sub">Digital Member Badge</div>
+
+<div id="badge-wrap"></div>
+
+<div class="instructions" id="instructions" style="display:none;">
+  <p><strong>Show this QR code</strong> at each meal to check in.<br>
+  Save this page to your phone for easy access.</p>
+  <button class="save-btn" onclick="window.print()">Save / Print Badge</button>
+</div>
+
+<script>
+function getParam(name) {
+  var url = new URL(window.location.href);
+  return url.searchParams.get(name) || '';
+}
+
+function buildBadge(id, name, tab, age) {
+  var wrap = document.getElementById('badge-wrap');
+  var html = '<div class="digital-card">';
+  html += '<div class="card-header">';
+  html += '<div class="card-header-org">COGASOC</div>';
+  html += '<div class="card-header-event">Passover Event Pass 2025</div>';
+  html += '</div>';
+  html += '<div class="card-body">';
+  html += '<div class="qr-wrap"><div id="qr-code"></div></div>';
+  html += '<div class="member-name">'+escapeHtml(name)+'</div>';
+  html += '<div class="member-id">'+escapeHtml(id)+'</div>';
+  html += '<div class="badge-row">';
+  if (tab) html += '<div class="badge-chip gold">'+escapeHtml(tab)+'</div>';
+  if (age) html += '<div class="badge-chip">'+escapeHtml(age)+'</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '<div class="card-footer">Show QR code at each meal &nbsp;&middot;&nbsp; COGASOC Passover 2025</div>';
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  // Generate QR
+  var qrData = JSON.stringify({id:id, name:name, tab:tab});
+  new QRCode(document.getElementById('qr-code'), {
+    text: qrData,
+    width: 200,
+    height: 200,
+    colorDark: '#1B2E4B',
+    colorLight: '#FFFFFF',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.title = name + ' — COGASOC Badge';
+  document.getElementById('instructions').style.display = 'block';
+}
+
+function showNotFound() {
+  document.getElementById('badge-wrap').innerHTML = '<div class="not-found"><h2>Badge Not Found</h2><p>This link may be invalid or expired.<br>Please contact your registration desk.</p></div>';
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// First try to load from local storage (same device)
+var id = getParam('id');
+var nameParam = getParam('name');
+
+if (!id) { showNotFound(); } else {
+  // Try local members first
+  var stored = localStorage.getItem('cogasoc_members');
+  var found = false;
+  if (stored) {
+    var members = JSON.parse(stored);
+    var m = members.find(function(x){ return x.id === id; });
+    if (m) {
+      var ageLabels = {adult:'Adult', senior:'Senior', child:'Child'};
+      buildBadge(m.id, m.firstName+' '+m.lastName, m.tabernacle||'', ageLabels[m.ageGroup]||'');
+      found = true;
+    }
+  }
+  // Fall back to URL params if not found locally
+  if (!found) {
+    var sheetURL = localStorage.getItem('passover_sheet_url');
+    if (sheetURL) {
+      fetch(sheetURL)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data.guests) {
+            var g = data.guests.find(function(x){ return x.GuestID===id; });
+            if (g) {
+              buildBadge(g.GuestID, g.FirstName+' '+g.LastName, g.Tabernacle||'', g.AgeGroup||'');
+            } else {
+              buildBadge(id, decodeURIComponent(nameParam), '', '');
+            }
+          } else {
+            buildBadge(id, decodeURIComponent(nameParam), '', '');
+          }
+        })
+        .catch(function(){
+          buildBadge(id, decodeURIComponent(nameParam), '', '');
+        });
+    } else {
+      // Just use what we have from the URL
+      buildBadge(id, decodeURIComponent(nameParam), '', '');
+    }
+  }
+}
+</script>
+</body>
+</html>
