@@ -632,8 +632,7 @@ function fetchFromSheet(callback) {
 
 function parseCSV(text) {
   var rows = [];
-  var lines = text.split('
-');
+  var lines = text.split('\n');
   lines.forEach(function(line) {
     if (!line.trim()) return;
     var row = [], cur = '', inQ = false;
@@ -784,8 +783,8 @@ function openCheckinCard(id) {
     ? '<div class="banner banner-red" style="margin-bottom:0;border-radius:0 0 0 0;">&#9888; Balance Due — '+( m.balanceNotes||'amount not specified')+'. Direct to On-Site Registration desk.</div>'
     : '';
   var html = '<div class="ci-card">'
-    +'<div class="ci-card-head"><div class="ci-card-name">'+m.firstName+' '+m.lastName+'</div><div class="ci-card-id">ID: '+m.id+' &nbsp;&middot;&nbsp; Registered '+new Date(m.registeredAt).toLocaleDateString()+'</div></div>'
-    + (hasBalance ? '<div style="background:var(--red-bg);border-bottom:1px solid rgba(153,27,27,0.2);padding:12px 22px;font-size:13px;font-weight:700;color:var(--red);">&#9888;&nbsp; Balance Due — '+(m.balanceNotes||'see notes')+'. Send to On-Site Registration desk.</div>' : '')
+    +'<div class="ci-card-head"><div class="ci-card-name">'+m.firstName+' '+m.lastName+'</div><div class="ci-card-id">ID: '+m.id+'  ·  Registered '+new Date(m.registeredAt).toLocaleDateString()+'</div></div>'
+    + (hasBalance ? '<div style="background:var(--red-bg);border-bottom:1px solid rgba(153,27,27,0.2);padding:12px 22px;font-size:13px;font-weight:700;color:var(--red);">&#9888;  Balance Due — '+(m.balanceNotes||'see notes')+'. Send to On-Site Registration desk.</div>' : '')
     +'<div class="ci-card-body">'
     +'<div class="ci-row"><span class="ci-lbl">Tabernacle</span><span class="ci-val">'+(m.tabernacle||'—')+'</span></div>'
     +'<div class="ci-row"><span class="ci-lbl">Age Group</span><span class="ci-val">'+(AGE[m.ageGroup]||'—')+'</span></div>'
@@ -796,7 +795,7 @@ function openCheckinCard(id) {
     +'<div class="ci-actions">'
     + (hasBalance
         ? '<button class="btn-secondary" onclick="closeCheckinCard()">Close</button><span style="font-size:13px;color:var(--red);font-weight:700;">&#8594; Direct to On-Site Registration desk</span>'
-        : '<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button><button class="btn-green" onclick="confirmCheckin(\''+m.id+'\')">&#10003;&nbsp; Confirm Check In + Hand Over Package</button>'
+        : '<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button><button class="btn-green" onclick="confirmCheckin(\''+m.id+'\')">&#10003;  Confirm Check In + Hand Over Package</button>'
       )
     +'</div></div>';
   document.getElementById('ci-member-card').innerHTML=html;
