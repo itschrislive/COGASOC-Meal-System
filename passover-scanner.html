@@ -17,153 +17,159 @@
   --red:#991B1B; --red-bg:#FEF2F2; --red2:#DC2626;
   --amber:#92400E; --amber-bg:#FFFBEB; --amber2:#D97706;
 }
-* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text); }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 
-/* HEADER */
-.header { background:var(--navy); padding:0 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--gold); box-shadow:0 2px 16px rgba(27,46,75,0.3); }
-.header-brand { display:flex; align-items:center; gap:10px; padding:12px 0; }
-.header-title { font-family:'Cormorant Garamond',serif; color:#fff; font-size:18px; font-weight:600; }
-.header-sub { font-size:10px; color:rgba(255,255,255,0.5); margin-top:1px; }
-.meal-selector { display:flex; gap:5px; }
-.meal-btn { padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; }
-.meal-btn.active { background:var(--gold); color:var(--navy); border-color:var(--gold); }
-.meal-btn.test-active { background:#4338CA; color:#C7D2FE; border-color:#6366F1; }
+.header{background:var(--navy);padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold);}
+.header-brand{padding:12px 0;}
+.header-title{font-family:'Cormorant Garamond',serif;color:#fff;font-size:18px;font-weight:600;}
+.header-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.meal-selector{display:flex;gap:5px;}
+.meal-btn{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.meal-btn.active{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+.meal-btn.test-active{background:#4338CA;color:#C7D2FE;border-color:#6366F1;}
 
-/* TEST BANNER */
-.test-banner { display:none; background:#EEF2FF; border-bottom:2px solid #6366F1; padding:6px 18px; font-size:12px; font-weight:700; color:#4338CA; text-align:center; }
-.test-banner.show { display:block; }
+.sync-bar{padding:6px 18px;font-size:12px;font-weight:700;text-align:center;display:none;}
+.sync-bar.show{display:block;}
+.sync-bar.loading{background:#EEF2FF;color:#4338CA;}
+.sync-bar.ok{background:var(--green-bg);color:var(--green);}
+.sync-bar.error{background:var(--red-bg);color:var(--red);}
 
-/* DAY BAR */
-.day-bar { background:var(--white); border-bottom:1px solid var(--border); padding:8px 16px; overflow-x:auto; display:flex; gap:7px; scrollbar-width:none; }
-.day-bar::-webkit-scrollbar { display:none; }
-.day-chip { white-space:nowrap; padding:5px 12px; border-radius:14px; font-size:12px; font-weight:600; border:1.5px solid var(--border); color:var(--muted); cursor:pointer; transition:all 0.2s; flex-shrink:0; }
-.day-chip.active { background:var(--navy-pale); border-color:var(--navy3); color:var(--navy2); }
+.test-banner{display:none;background:#EEF2FF;border-bottom:2px solid #6366F1;padding:6px 18px;font-size:12px;font-weight:700;color:#4338CA;text-align:center;}
+.test-banner.show{display:block;}
 
-/* MAIN */
-.main { padding:16px; max-width:480px; margin:0 auto; }
+.day-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 16px;overflow-x:auto;display:flex;gap:7px;scrollbar-width:none;}
+.day-bar::-webkit-scrollbar{display:none;}
+.day-chip{white-space:nowrap;padding:5px 12px;border-radius:14px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.day-chip.active{background:var(--navy-pale);border-color:var(--navy3);color:var(--navy2);}
 
-/* STATS */
-.stats-bar { display:flex; gap:10px; margin-bottom:14px; }
-.stat-box { flex:1; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:11px; text-align:center; }
-.stat-num { font-size:22px; font-weight:700; color:var(--navy); font-family:'Cormorant Garamond',serif; }
-.stat-label { font-size:9px; color:var(--brown2); text-transform:uppercase; letter-spacing:0.07em; margin-top:2px; font-weight:700; }
+.main{padding:16px;max-width:480px;margin:0 auto;}
 
-/* RESULT CARD */
-.result-card { border-radius:12px; padding:16px; margin-bottom:14px; display:none; border:2px solid transparent; }
-.result-card.ok { background:var(--green-bg); border-color:rgba(22,163,74,0.3); display:block; }
-.result-card.already { background:var(--amber-bg); border-color:rgba(217,119,6,0.3); display:block; }
-.result-card.denied { background:var(--red-bg); border-color:rgba(220,38,38,0.3); display:block; }
-.result-status { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-.status-icon { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; font-weight:700; }
-.ok .status-icon { background:rgba(22,163,74,0.15); color:var(--green2); }
-.already .status-icon { background:rgba(217,119,6,0.15); color:var(--amber2); }
-.denied .status-icon { background:rgba(220,38,38,0.15); color:var(--red2); }
-.status-label { font-size:18px; font-weight:700; }
-.ok .status-label { color:var(--green); }
-.already .status-label { color:var(--amber); }
-.denied .status-label { color:var(--red); }
-.result-name { font-size:20px; font-family:'Cormorant Garamond',serif; color:var(--navy); font-weight:700; margin-bottom:4px; }
-.result-detail { font-size:12px; color:var(--mid); }
-.result-meta { margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.07); display:flex; gap:10px; }
-.meta-box { flex:1; background:rgba(255,255,255,0.7); border-radius:7px; padding:8px; text-align:center; }
-.meta-lbl { font-size:9px; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); font-weight:700; }
-.meta-val { font-size:14px; font-weight:700; color:var(--navy); margin-top:2px; }
+.stats-bar{display:flex;gap:10px;margin-bottom:14px;}
+.stat-box{flex:1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center;}
+.stat-num{font-size:22px;font-weight:700;color:var(--navy);font-family:'Cormorant Garamond',serif;}
+.stat-label{font-size:9px;color:var(--brown2);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;font-weight:700;}
 
-/* SCANNER */
-.scanner-wrap { width:100%; max-width:400px; height:300px; background:#0A0E18; border-radius:14px; overflow:hidden; border:2px solid var(--navy2); margin:0 auto 14px; position:relative; }
-#camera-video { width:100%; height:100%; object-fit:cover; display:none; }
-.scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-.scan-frame { width:200px; height:200px; position:relative; }
-.scan-frame::before,.scan-frame::after,.scan-frame .cbr,.scan-frame .cbl { content:''; position:absolute; width:28px; height:28px; border-color:var(--gold2); border-style:solid; }
-.scan-frame::before { top:0; left:0; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
-.scan-frame::after { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
-.scan-frame .cbr { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
-.scan-frame .cbl { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
-.scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold2),transparent); animation:scanline 2s ease-in-out infinite; top:0; }
-@keyframes scanline { 0%{top:8%;opacity:0;} 10%{opacity:1;} 90%{opacity:1;} 100%{top:92%;opacity:0;} }
-.scanner-placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:2; }
-.scanner-placeholder p { font-size:14px; font-weight:600; color:rgba(255,255,255,0.5); text-align:center; padding:20px; }
+.result-card{border-radius:12px;padding:16px;margin-bottom:14px;display:none;border:2px solid transparent;}
+.result-card.ok{background:var(--green-bg);border-color:rgba(22,163,74,0.3);display:block;}
+.result-card.already{background:var(--amber-bg);border-color:rgba(217,119,6,0.3);display:block;}
+.result-card.denied{background:var(--red-bg);border-color:rgba(220,38,38,0.3);display:block;}
+.result-status{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.status-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;font-weight:700;}
+.ok .status-icon{background:rgba(22,163,74,0.15);color:var(--green2);}
+.already .status-icon{background:rgba(217,119,6,0.15);color:var(--amber2);}
+.denied .status-icon{background:rgba(220,38,38,0.15);color:var(--red2);}
+.status-label{font-size:18px;font-weight:700;}
+.ok .status-label{color:var(--green);}
+.already .status-label{color:var(--amber);}
+.denied .status-label{color:var(--red);}
+.result-name{font-size:20px;font-family:'Cormorant Garamond',serif;color:var(--navy);font-weight:700;margin-bottom:3px;}
+.result-detail{font-size:12px;color:var(--mid);}
+.result-meta{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.07);display:flex;gap:8px;}
+.meta-box{flex:1;background:rgba(255,255,255,0.7);border-radius:7px;padding:8px;text-align:center;}
+.meta-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:700;}
+.meta-val{font-size:13px;font-weight:700;color:var(--navy);margin-top:2px;}
 
-/* BIG POPUP */
-.scan-popup { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:600; pointer-events:none; opacity:0; transition:opacity 0.15s; }
-.scan-popup.show { opacity:1; pointer-events:auto; }
-.scan-popup-inner { border-radius:20px; padding:36px 44px; text-align:center; min-width:260px; max-width:320px; width:88vw; border:2px solid transparent; }
-.scan-popup.show .scan-popup-inner { animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-@keyframes popIn { 0%{transform:scale(0.7);opacity:0;} 70%{transform:scale(1.05);} 100%{transform:scale(1);opacity:1;} }
-.scan-popup.ok .scan-popup-inner { background:var(--green-bg); border-color:rgba(22,163,74,0.4); }
-.scan-popup.already .scan-popup-inner { background:var(--amber-bg); border-color:rgba(217,119,6,0.4); }
-.scan-popup.denied .scan-popup-inner { background:var(--red-bg); border-color:rgba(220,38,38,0.4); }
-.popup-icon { font-size:60px; line-height:1; margin-bottom:10px; display:block; font-weight:700; }
-.ok .popup-icon { color:var(--green2); }
-.already .popup-icon { color:var(--amber2); }
-.denied .popup-icon { color:var(--red2); }
-.popup-status { font-size:26px; font-weight:800; letter-spacing:0.04em; margin-bottom:6px; }
-.ok .popup-status { color:var(--green); }
-.already .popup-status { color:var(--amber); }
-.denied .popup-status { color:var(--red); }
-.popup-name { font-size:18px; font-family:'Cormorant Garamond',serif; color:var(--navy); font-weight:700; margin-bottom:4px; }
-.popup-detail { font-size:12px; color:var(--mid); }
+.scanner-wrap{width:100%;max-width:400px;height:300px;background:#0A0E18;border-radius:14px;overflow:hidden;border:2px solid var(--navy2);margin:0 auto 14px;position:relative;}
+#camera-video{width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0;}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;}
+.scan-frame{width:200px;height:200px;position:relative;}
+.scan-frame::before,.scan-frame::after,.scan-frame .cbr,.scan-frame .cbl{content:'';position:absolute;width:28px;height:28px;border-color:var(--gold2);border-style:solid;}
+.scan-frame::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+.scan-frame::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0;}
+.scan-frame .cbr{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.scan-frame .cbl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px;}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2),transparent);animation:scanline 2s ease-in-out infinite;}
+@keyframes scanline{0%{top:8%;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:92%;opacity:0;}}
+.scanner-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;}
+.scanner-placeholder p{font-size:14px;font-weight:600;color:rgba(255,255,255,0.5);text-align:center;padding:20px;}
 
-/* FLASH */
-.flash { position:fixed; inset:0; pointer-events:none; z-index:500; opacity:0; transition:opacity 0.1s; }
-.flash.green { background:rgba(22,163,74,0.2); }
-.flash.red { background:rgba(220,38,38,0.2); }
-.flash.amber { background:rgba(217,119,6,0.15); }
-.flash.show { opacity:1; }
+.scan-popup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:600;pointer-events:none;opacity:0;transition:opacity 0.15s;}
+.scan-popup.show{opacity:1;pointer-events:auto;}
+.scan-popup-inner{border-radius:20px;padding:36px 44px;text-align:center;min-width:260px;max-width:320px;width:88vw;border:2px solid transparent;}
+.scan-popup.show .scan-popup-inner{animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+@keyframes popIn{0%{transform:scale(0.7);opacity:0;}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
+.scan-popup.ok .scan-popup-inner{background:var(--green-bg);border-color:rgba(22,163,74,0.4);}
+.scan-popup.already .scan-popup-inner{background:var(--amber-bg);border-color:rgba(217,119,6,0.4);}
+.scan-popup.denied .scan-popup-inner{background:var(--red-bg);border-color:rgba(220,38,38,0.4);}
+.popup-icon{font-size:60px;line-height:1;margin-bottom:10px;display:block;font-weight:700;}
+.ok .popup-icon{color:var(--green2);}
+.already .popup-icon{color:var(--amber2);}
+.denied .popup-icon{color:var(--red2);}
+.popup-status{font-size:26px;font-weight:800;letter-spacing:0.04em;margin-bottom:6px;}
+.ok .popup-status{color:var(--green);}
+.already .popup-status{color:var(--amber);}
+.denied .popup-status{color:var(--red);}
+.popup-name{font-size:18px;font-family:'Cormorant Garamond',serif;color:var(--navy);font-weight:700;margin-bottom:4px;}
+.popup-detail{font-size:12px;color:var(--mid);}
 
-/* CONTROLS */
-.controls { display:flex; gap:10px; margin-bottom:14px; }
-.ctrl-btn { flex:1; padding:12px; border-radius:10px; border:1.5px solid var(--border); background:var(--white); color:var(--navy); font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; text-align:center; }
-.ctrl-btn.scanning { background:var(--navy); border-color:var(--navy); color:#fff; }
+.flash{position:fixed;inset:0;pointer-events:none;z-index:500;opacity:0;transition:opacity 0.1s;}
+.flash.green{background:rgba(22,163,74,0.2);}
+.flash.red{background:rgba(220,38,38,0.2);}
+.flash.amber{background:rgba(217,119,6,0.15);}
+.flash.show{opacity:1;}
 
-/* MANUAL LOOKUP */
-.manual-section { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; }
-.manual-section h3 { font-size:11px; font-weight:700; color:var(--brown); margin-bottom:9px; text-transform:uppercase; letter-spacing:0.07em; }
-.manual-row { display:flex; gap:8px; }
-.manual-input { flex:1; padding:10px 13px; background:var(--off); border:1.5px solid var(--border); border-radius:8px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; outline:none; }
-.manual-input:focus { border-color:var(--navy3); }
-.manual-btn { padding:10px 16px; background:var(--navy); color:#fff; border:none; border-radius:8px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.controls{display:flex;gap:10px;margin-bottom:14px;}
+.ctrl-btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);color:var(--navy);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;}
+.ctrl-btn.scanning{background:var(--navy);border-color:var(--navy);color:#fff;}
 
-/* LOG */
-.recent-log { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:14px; }
-.recent-log h3 { font-size:11px; color:var(--brown); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:10px; font-weight:700; }
-.log-entry { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
-.log-entry:last-child { border-bottom:none; }
-.log-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.log-dot.ok { background:var(--green2); }
-.log-dot.already { background:var(--amber2); }
-.log-dot.denied { background:var(--red2); }
-.log-name { font-size:13px; color:var(--text); flex:1; font-weight:600; }
-.log-meta { font-size:11px; color:var(--muted); }
+.manual-section{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+.manual-section h3{font-size:11px;font-weight:700;color:var(--brown);margin-bottom:9px;text-transform:uppercase;letter-spacing:0.07em;}
+.manual-row{display:flex;gap:8px;}
+.manual-input{flex:1;padding:10px 13px;background:var(--off);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;outline:none;}
+.manual-input:focus{border-color:var(--navy3);}
+.manual-btn{padding:10px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
-/* SETUP OVERLAY */
-.setup-overlay { position:fixed; inset:0; background:rgba(27,46,75,0.7); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
-.setup-box { background:var(--white); border:2px solid var(--gold); border-radius:16px; padding:28px; max-width:400px; width:100%; }
-.setup-box h2 { font-family:'Cormorant Garamond',serif; color:var(--navy); font-size:24px; margin-bottom:6px; }
-.setup-box p { font-size:13px; color:var(--mid); margin-bottom:16px; line-height:1.6; }
-.setup-input { width:100%; padding:11px 13px; background:var(--off); border:1.5px solid var(--border); border-radius:8px; color:var(--text); font-family:'Nunito',sans-serif; font-size:13px; margin-bottom:10px; outline:none; }
-.setup-save { width:100%; padding:12px; background:var(--navy); color:#fff; border:none; border-radius:8px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; cursor:pointer; margin-bottom:8px; }
-.setup-skip { width:100%; padding:9px; background:transparent; color:var(--muted); border:none; font-family:'Nunito',sans-serif; font-size:13px; cursor:pointer; }
+.search-results{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-top:8px;overflow:hidden;display:none;}
+.search-result-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;display:flex;justify-content:space-between;align-items:center;}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item:hover{background:var(--navy-pale);}
+.sri-name{font-weight:700;color:var(--navy);font-size:14px;}
+.sri-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+.sri-btn{background:var(--navy);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
+
+.recent-log{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+.recent-log h3{font-size:11px;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;font-weight:700;}
+.log-entry{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.log-entry:last-child{border-bottom:none;}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.log-dot.ok{background:var(--green2);}
+.log-dot.already{background:var(--amber2);}
+.log-dot.denied{background:var(--red2);}
+.log-name{font-size:13px;color:var(--text);flex:1;font-weight:600;}
+.log-meta{font-size:11px;color:var(--muted);}
+
+.diag-box{background:var(--navy);color:var(--gold2);border-radius:10px;padding:14px;margin-bottom:14px;font-size:11px;font-family:monospace;line-height:1.8;display:none;}
+.diag-box.show{display:block;}
+
+.setup-overlay{position:fixed;inset:0;background:rgba(27,46,75,0.7);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.setup-box{background:var(--white);border:2px solid var(--gold);border-radius:16px;padding:28px;max-width:400px;width:100%;}
+.setup-box h2{font-family:'Cormorant Garamond',serif;color:var(--navy);font-size:24px;margin-bottom:6px;}
+.setup-box p{font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6;}
+.setup-label{font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:5px;}
+.setup-input{width:100%;padding:11px 13px;background:var(--off);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:12px;margin-bottom:12px;outline:none;}
+.setup-save{width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.setup-skip{width:100%;padding:9px;background:transparent;color:var(--muted);border:none;font-family:'Nunito',sans-serif;font-size:13px;cursor:pointer;}
+.setup-status{font-size:12px;color:var(--green);font-weight:600;margin-top:4px;min-height:18px;}
 </style>
 </head>
 <body>
 
-<!-- SETUP OVERLAY -->
 <div class="setup-overlay" id="setup-overlay">
   <div class="setup-box">
-    <h2>Volunteer Setup</h2>
-    <p>Enter the Google Apps Script URL to connect to the live guest database.</p>
-    <input class="setup-input" id="setup-url" type="text" placeholder="https://script.google.com/macros/s/…/exec">
-    <button class="setup-save" onclick="saveSetup()">Connect & Start</button>
-    <button class="setup-skip" onclick="skipSetup()">Skip — use local data only</button>
+    <h2>Scanner Setup</h2>
+    <p>Enter your Google Apps Script URL. This connects the scanner to your member sheet for live lookups and meal tracking.</p>
+    <span class="setup-label">Apps Script URL (read + write)</span>
+    <input class="setup-input" id="setup-script-url" type="text" placeholder="https://script.google.com/macros/s/…/exec">
+    <span class="setup-label">Published CSV URL (member list)</span>
+    <input class="setup-input" id="setup-csv-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv">
+    <button class="setup-save" onclick="saveSetup()">Save &amp; Sync Members</button>
+    <div class="setup-status" id="setup-status"></div>
+    <button class="setup-skip" onclick="skipSetup()">Skip for now</button>
   </div>
 </div>
 
-<!-- FLASH -->
 <div class="flash" id="flash"></div>
-
-<!-- BIG POPUP -->
 <div class="scan-popup" id="scan-popup" onclick="dismissPopup()">
   <div class="scan-popup-inner">
     <span class="popup-icon" id="popup-icon">&#10003;</span>
@@ -173,13 +179,10 @@ body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text)
   </div>
 </div>
 
-<!-- HEADER -->
 <div class="header">
   <div class="header-brand">
-    <div>
-      <div class="header-title">Meal Scanner</div>
-      <div class="header-sub">COGASOC Registration Portal</div>
-    </div>
+    <div class="header-title">Meal Scanner</div>
+    <div class="header-sub">COGASOC Registration Portal</div>
   </div>
   <div class="meal-selector">
     <button class="meal-btn active" id="btn-b" onclick="setMeal('breakfast')">Breakfast</button>
@@ -188,6 +191,7 @@ body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text)
   </div>
 </div>
 
+<div class="sync-bar" id="sync-bar">Syncing members...</div>
 <div class="test-banner" id="test-banner">TEST MODE — scans will NOT be recorded</div>
 <div class="day-bar" id="day-bar"></div>
 
@@ -196,7 +200,7 @@ body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text)
   <div class="stats-bar">
     <div class="stat-box"><div class="stat-num" id="stat-served">0</div><div class="stat-label">Served</div></div>
     <div class="stat-box"><div class="stat-num" id="stat-blocked">0</div><div class="stat-label">Blocked</div></div>
-    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Guests</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Members</div></div>
   </div>
 
   <div class="result-card" id="result-card">
@@ -214,7 +218,7 @@ body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text)
   </div>
 
   <div class="scanner-wrap" id="scanner-wrap">
-    <video id="camera-video" playsinline autoplay muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
+    <video id="camera-video" playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
     <div class="scan-overlay">
       <div class="scan-frame">
         <div class="scan-line"></div>
@@ -229,26 +233,29 @@ body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text)
 
   <div class="controls">
     <button class="ctrl-btn" id="scan-toggle" onclick="toggleCamera()">Start Camera</button>
-    <button class="ctrl-btn" onclick="showSettings()">Settings</button>
+    <button class="ctrl-btn" onclick="showSettings()">&#9881; Settings</button>
   </div>
 
   <div class="manual-section">
-    <h3>Manual Lookup</h3>
+    <h3>Manual Lookup — Search by Name or ID</h3>
     <div class="manual-row">
-      <input class="manual-input" id="manual-input" type="text" placeholder="Enter name or Guest ID...">
-      <button class="manual-btn" onclick="manualLookup()">Check In</button>
+      <input class="manual-input" id="manual-input" type="text" placeholder="Type first name, last name, or ID...">
+      <button class="manual-btn" onclick="doSearch()">Search</button>
     </div>
+    <div class="search-results" id="search-results"></div>
   </div>
 
+  <div class="diag-box" id="diag-box"></div>
+
   <div class="recent-log">
-    <h3>Recent Scans</h3>
+    <h3>Recent Scans — <span id="log-count">0</span> today</h3>
     <div id="log-list"><div style="padding:16px 0;font-size:13px;color:var(--muted);text-align:center;">No scans yet</div></div>
   </div>
 
 </div>
 
 <script>
-var DAYS_CONFIG = [
+var DAYS = [
   {key:'TEST', label:'TEST DAY', date:'test'},
   {key:'Mar31',label:'Mar 31',date:'2025-03-31'},
   {key:'Apr1', label:'Apr 1', date:'2025-04-01'},
@@ -261,45 +268,48 @@ var DAYS_CONFIG = [
   {key:'Apr8', label:'Apr 8', date:'2025-04-08'}
 ];
 
-var sheetURL = localStorage.getItem('passover_sheet_url') || '';
+var scriptURL = localStorage.getItem('passover_sheet_url') || '';
+var csvURL = localStorage.getItem('passover_csv_url') || '';
 var currentMeal = 'breakfast';
-var currentDay = autoDetectDay();
+var currentDay = autoDay();
 var scanning = false;
 var videoStream = null;
 var scanCanvas = document.createElement('canvas');
 var scanCtx = scanCanvas.getContext('2d');
 var scanInterval = null;
-var lastScannedId = '';
-var lastScanTime = 0;
+var lastId = '';
+var lastTime = 0;
+var members = [];
 var stats = {served:0, blocked:0};
 var scanLog = [];
-var localMembers = JSON.parse(localStorage.getItem('cogasoc_members') || '[]');
 
 window.addEventListener('DOMContentLoaded', function() {
   buildDayBar();
-  updateStats();
   var hr = new Date().getHours();
   setMeal(hr >= 11 ? 'lunch' : 'breakfast');
-  if (sheetURL) {
+  if (scriptURL || csvURL) {
     document.getElementById('setup-overlay').style.display = 'none';
-    document.getElementById('setup-url').value = sheetURL;
-    fetchGuestCount();
+    document.getElementById('setup-script-url').value = scriptURL;
+    document.getElementById('setup-csv-url').value = csvURL;
+    loadMembers();
   }
   document.getElementById('manual-input').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') manualLookup();
+    if (e.key === 'Enter') doSearch();
+  });
+  document.getElementById('manual-input').addEventListener('input', function(){
+    if (!this.value.trim()) document.getElementById('search-results').style.display = 'none';
   });
 });
 
-function autoDetectDay() {
+function autoDay() {
   var today = new Date().toISOString().slice(0,10);
-  var found = DAYS_CONFIG.find(function(d){ return d.date === today; });
-  return found ? found.key : 'Mar31';
+  var d = DAYS.find(function(x){ return x.date === today; });
+  return d ? d.key : 'Mar31';
 }
 
 function buildDayBar() {
   var bar = document.getElementById('day-bar');
-  bar.innerHTML = '';
-  DAYS_CONFIG.forEach(function(d) {
+  DAYS.forEach(function(d) {
     var chip = document.createElement('div');
     chip.className = 'day-chip' + (d.key === currentDay ? ' active' : '');
     chip.textContent = d.label;
@@ -312,50 +322,172 @@ function buildDayBar() {
   });
 }
 
+/* ── LOAD MEMBERS FROM SHEET ── */
+function loadMembers() {
+  showSync('loading', 'Syncing members from sheet...');
+  // Try CSV first (faster, no auth)
+  var url = csvURL || scriptURL;
+  if (!url) { showSync('error', 'No sheet URL configured'); return; }
+
+  if (csvURL) {
+    fetch(csvURL + (csvURL.indexOf('?')>=0?'&':'?') + 't=' + Date.now())
+      .then(function(r){ return r.text(); })
+      .then(function(text){
+        var parsed = parseCSV(text);
+        if (parsed.length > 1) {
+          var headers = parsed[0].map(function(h){ return h.trim(); });
+          members = parsed.slice(1).map(function(row){
+            var o = {};
+            headers.forEach(function(h,i){ o[h] = (row[i]||'').trim(); });
+            return {
+              id: o.GuestID || o.ID || '',
+              firstName: o.FirstName || o['First Name'] || '',
+              lastName: o.LastName || o['Last Name'] || '',
+              tabernacle: o.Tabernacle || '',
+              ageGroup: o.AgeGroup || '',
+              paymentType: o.PaymentType || '',
+              checkinStatus: o.CheckinStatus || 'pending'
+            };
+          }).filter(function(m){ return m.id && m.firstName; });
+          document.getElementById('stat-total').textContent = members.length;
+          showSync('ok', members.length + ' members loaded');
+          diag('CSV loaded: ' + members.length + ' members\nFirst: ' + (members[0]?members[0].firstName+' '+members[0].lastName:'none'));
+        } else {
+          showSync('error', 'CSV appears empty — check sheet is published');
+        }
+      })
+      .catch(function(e){
+        showSync('error', 'CSV error: ' + e.message);
+        diag('CSV FAIL: ' + e.message);
+        if (scriptURL) loadMembersViaScript();
+      });
+  } else if (scriptURL) {
+    loadMembersViaScript();
+  }
+}
+
+function loadMembersViaScript() {
+  fetch(scriptURL + '?t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.guests && data.guests.length > 0) {
+        members = data.guests.map(function(g){
+          return {
+            id: g.GuestID || '',
+            firstName: g.FirstName || '',
+            lastName: g.LastName || '',
+            tabernacle: g.Tabernacle || '',
+            ageGroup: g.AgeGroup || '',
+            paymentType: g.PaymentType || '',
+            checkinStatus: g.CheckinStatus || 'pending'
+          };
+        }).filter(function(m){ return m.id && m.firstName; });
+        document.getElementById('stat-total').textContent = members.length;
+        showSync('ok', members.length + ' members loaded via script');
+        diag('Script loaded: ' + members.length + ' members');
+      } else {
+        showSync('error', 'No members found in sheet');
+      }
+    })
+    .catch(function(e){
+      showSync('error', 'Cannot reach sheet: ' + e.message);
+      diag('Script FAIL: ' + e.message);
+    });
+}
+
+function parseCSV(text) {
+  var rows = [];
+  var lines = text.split('\n');
+  lines.forEach(function(line) {
+    if (!line.trim()) return;
+    var row = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { row.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    row.push(cur);
+    rows.push(row);
+  });
+  return rows;
+}
+
+function showSync(type, msg) {
+  var bar = document.getElementById('sync-bar');
+  bar.textContent = msg;
+  bar.className = 'sync-bar show ' + type;
+  if (type === 'ok') setTimeout(function(){ bar.classList.remove('show'); }, 3000);
+}
+
+/* ── SETUP ── */
 function saveSetup() {
-  sheetURL = document.getElementById('setup-url').value.trim();
-  localStorage.setItem('passover_sheet_url', sheetURL);
-  document.getElementById('setup-overlay').style.display = 'none';
-  fetchGuestCount();
+  scriptURL = document.getElementById('setup-script-url').value.trim();
+  csvURL = document.getElementById('setup-csv-url').value.trim();
+  localStorage.setItem('passover_sheet_url', scriptURL);
+  localStorage.setItem('passover_csv_url', csvURL);
+  document.getElementById('setup-status').textContent = 'Saved! Loading members...';
+  loadMembers();
+  setTimeout(function(){
+    document.getElementById('setup-overlay').style.display = 'none';
+  }, 1500);
 }
 function skipSetup() { document.getElementById('setup-overlay').style.display = 'none'; }
 function showSettings() {
-  document.getElementById('setup-url').value = sheetURL;
+  document.getElementById('setup-script-url').value = scriptURL;
+  document.getElementById('setup-csv-url').value = csvURL;
+  document.getElementById('setup-status').textContent = '';
   document.getElementById('setup-overlay').style.display = 'flex';
 }
 
+/* ── MEAL / DAY ── */
 function setMeal(meal) {
   currentMeal = meal;
   var isTest = meal === 'test';
-  document.getElementById('btn-b').className = 'meal-btn' + (meal==='breakfast' ? ' active' : '');
-  document.getElementById('btn-l').className = 'meal-btn' + (meal==='lunch' ? ' active' : '');
-  document.getElementById('btn-t').className = 'meal-btn' + (isTest ? ' test-active' : '');
+  document.getElementById('btn-b').className = 'meal-btn' + (meal==='breakfast'?' active':'');
+  document.getElementById('btn-l').className = 'meal-btn' + (meal==='lunch'?' active':'');
+  document.getElementById('btn-t').className = 'meal-btn' + (isTest?' test-active':'');
   document.getElementById('test-banner').classList.toggle('show', isTest);
   document.getElementById('scanner-wrap').style.borderColor = isTest ? '#6366F1' : 'var(--navy2)';
 }
 
 /* ── CAMERA ── */
 function toggleCamera() {
-  if (scanning) stopCamera();
-  else startCamera();
+  if (scanning) stopCamera(); else startCamera();
 }
 
 function startCamera() {
-  var constraints = {video:{facingMode:'environment', width:{ideal:1280}, height:{ideal:1280}}};
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(function(stream) {
-      videoStream = stream;
-      var video = document.getElementById('camera-video');
-      video.srcObject = stream;
+  var video = document.getElementById('camera-video');
+  // Try back camera first, fall back to any camera
+  var tryCamera = function(constraints) {
+    return navigator.mediaDevices.getUserMedia(constraints)
+      .then(function(stream) {
+        videoStream = stream;
+        video.srcObject = stream;
+        return new Promise(function(resolve) {
+          video.onloadedmetadata = function() {
+            video.play().then(resolve).catch(resolve);
+          };
+        });
+      });
+  };
+
+  tryCamera({video:{facingMode:{exact:'environment'},width:{ideal:1280},height:{ideal:1280}}})
+    .catch(function(){ return tryCamera({video:{facingMode:'environment'}}); })
+    .catch(function(){ return tryCamera({video:true}); })
+    .then(function() {
       video.style.display = 'block';
       document.getElementById('scanner-placeholder').style.display = 'none';
       scanning = true;
       document.getElementById('scan-toggle').textContent = 'Stop Camera';
       document.getElementById('scan-toggle').classList.add('scanning');
-      scanInterval = setInterval(scanFrame, 150);
+      // Wait a moment for video to stabilize before scanning
+      setTimeout(function(){ scanInterval = setInterval(scanFrame, 200); }, 500);
+      diag('Camera started: ' + (video.videoWidth||'?') + 'x' + (video.videoHeight||'?'));
     })
-    .catch(function() {
-      alert('Camera access denied. Use manual lookup instead.');
+    .catch(function(e) {
+      alert('Camera error: ' + e.message + '\n\nUse Manual Lookup instead.');
+      diag('Camera FAIL: ' + e.message);
     });
 }
 
@@ -374,17 +506,18 @@ function stopCamera() {
 
 function scanFrame() {
   var video = document.getElementById('camera-video');
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  if (!video.videoWidth || !video.videoHeight) return;
   scanCanvas.width = video.videoWidth;
   scanCanvas.height = video.videoHeight;
   scanCtx.drawImage(video, 0, 0);
   var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
   var code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'});
-  if (code) {
+  if (code && code.data) {
     var now = Date.now();
-    if (code.data !== lastScannedId || now - lastScanTime > 4000) {
-      lastScannedId = code.data;
-      lastScanTime = now;
+    if (code.data !== lastId || now - lastTime > 4000) {
+      lastId = code.data;
+      lastTime = now;
+      diag('QR detected: ' + code.data.substring(0,50));
       processQR(code.data);
     }
   }
@@ -394,113 +527,142 @@ function scanFrame() {
 function processQR(qrText) {
   var guestId, guestName;
   try {
-    var parsed = JSON.parse(qrText);
-    guestId = parsed.id;
-    guestName = parsed.name;
+    var p = JSON.parse(qrText);
+    guestId = p.id; guestName = p.name;
   } catch(e) {
     guestId = qrText.trim().toUpperCase();
-    guestName = null;
   }
   checkIn(guestId, guestName);
 }
 
-function manualLookup() {
+/* ── MANUAL SEARCH ── */
+function doSearch() {
   var val = document.getElementById('manual-input').value.trim();
   if (!val) return;
-  document.getElementById('manual-input').value = '';
-  // Check if it looks like an ID (starts with PS)
-  if (val.toUpperCase().startsWith('PS') && val.length <= 8) {
-    checkIn(val.toUpperCase(), null);
-  } else {
-    // Search by name in local members
-    var q = val.toLowerCase();
-    var found = localMembers.find(function(m){
-      return (m.firstName+' '+m.lastName).toLowerCase().includes(q) ||
-             m.lastName.toLowerCase().startsWith(q) ||
-             m.firstName.toLowerCase().startsWith(q);
-    });
-    if (found) {
-      checkIn(found.id, found.firstName+' '+found.lastName);
-    } else {
-      // Try sheet lookup
-      checkIn(val, null);
-    }
+  var q = val.toLowerCase();
+  var results = [];
+
+  // Search local members first
+  results = members.filter(function(m) {
+    var full = (m.firstName+' '+m.lastName).toLowerCase();
+    var id = m.id.toLowerCase();
+    return full.includes(q) || id.includes(q) ||
+           m.firstName.toLowerCase().startsWith(q) ||
+           m.lastName.toLowerCase().startsWith(q);
+  });
+
+  diag('Search "'+val+'": '+results.length+' results from '+members.length+' members');
+
+  var box = document.getElementById('search-results');
+  if (results.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "'+val+'"<br><small>Try last name only, or check the Members list is synced in Settings</small></div>';
+    return;
   }
+  if (results.length === 1) {
+    // Auto check in if only one result
+    box.style.display = 'none';
+    document.getElementById('manual-input').value = '';
+    checkIn(results[0].id, results[0].firstName+' '+results[0].lastName);
+    return;
+  }
+  // Show list to pick from
+  box.style.display = 'block';
+  box.innerHTML = results.slice(0,6).map(function(m){
+    return '<div class="search-result-item" onclick="selectMember(\''+m.id+'\',\''+m.firstName+' '+m.lastName+'\')">'
+      +'<div><div class="sri-name">'+m.firstName+' '+m.lastName+'</div>'
+      +'<div class="sri-detail">'+(m.tabernacle||'')+(m.tabernacle&&m.ageGroup?' · ':'')+capitalize(m.ageGroup||'')+'</div></div>'
+      +'<button class="sri-btn">Check In</button>'
+      +'</div>';
+  }).join('');
 }
 
+function selectMember(id, name) {
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('manual-input').value = '';
+  checkIn(id, name);
+}
+
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+
+/* ── CHECK IN ── */
 function checkIn(guestId, guestName) {
   var isTest = currentMeal === 'test' || currentDay === 'TEST';
   var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
-  var dayConf = DAYS_CONFIG.find(function(d){ return d.key === currentDay; });
+  var name = guestName || lookupName(guestId);
 
   if (isTest) {
-    var fakeName = guestName || lookupName(guestId) || guestId;
+    var fakeName = name || guestId;
     var outcomes = ['ok','ok','ok','already','denied'];
     var pick = outcomes[Math.floor(Math.random()*outcomes.length)];
-    var msgs = {ok:'Test scan — would approve', already:'Test scan — already used', denied:'Test scan — would deny'};
+    var msgs = {ok:'Test scan — would approve',already:'Test scan — already used',denied:'Test scan — would deny'};
     showResult(pick, fakeName, guestId, msgs[pick]);
     flash(pick==='ok'?'green':pick==='already'?'amber':'red');
     addLog(pick, fakeName, guestId);
     return;
   }
 
-  if (sheetURL) {
-    fetch(sheetURL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'scan', guestId:guestId, mealCol:mealCol})
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (!data.ok) throw new Error(data.error);
-      if (data.status === 'already_used') {
-        showResult('already', data.name, guestId, currentMeal+' already used today');
-        flash('amber');
-        addLog('already', data.name, guestId);
-        stats.blocked++;
-      } else {
-        showResult('ok', data.name, guestId, 'Enjoy your '+currentMeal+'!');
-        flash('green');
-        addLog('ok', data.name, guestId);
-        stats.served++;
-      }
-      updateStats();
-    })
-    .catch(function(){ localCheckIn(guestId, guestName, mealCol); });
-  } else {
-    localCheckIn(guestId, guestName, mealCol);
-  }
-}
+  // Check local scan cache first (instant feedback)
+  var cacheKey = 'scan_'+mealCol;
+  var scans = JSON.parse(localStorage.getItem(cacheKey) || '{}');
 
-function localCheckIn(guestId, guestName, mealCol) {
-  var name = guestName || lookupName(guestId);
-  if (!name) {
-    showResult('denied', guestId, guestId, 'Guest not found');
+  if (!name && members.length === 0) {
+    showResult('denied', guestId, guestId, 'Members not loaded — check Settings');
     flash('red');
     addLog('denied', guestId, guestId);
     stats.blocked++;
     updateStats();
     return;
   }
-  var scans = JSON.parse(localStorage.getItem('cogasoc_scans_'+mealCol) || '{}');
+
+  if (!name) {
+    showResult('denied', guestId, guestId, 'Member not found in list');
+    flash('red');
+    addLog('denied', guestId, guestId);
+    stats.blocked++;
+    updateStats();
+    return;
+  }
+
   if (scans[guestId]) {
-    showResult('already', name, guestId, 'Already used today');
+    // Already used locally — show immediately, also verify with sheet
+    showResult('already', name, guestId, currentMeal+' already used today');
     flash('amber');
     addLog('already', name, guestId);
     stats.blocked++;
-  } else {
-    scans[guestId] = new Date().toISOString();
-    localStorage.setItem('cogasoc_scans_'+mealCol, JSON.stringify(scans));
-    showResult('ok', name, guestId, 'Enjoy your meal!');
-    flash('green');
-    addLog('ok', name, guestId);
-    stats.served++;
+    updateStats();
+    return;
   }
+
+  // Mark locally immediately for instant feedback
+  scans[guestId] = new Date().toISOString();
+  localStorage.setItem(cacheKey, JSON.stringify(scans));
+  showResult('ok', name, guestId, 'Enjoy your '+currentMeal+'!');
+  flash('green');
+  addLog('ok', name, guestId);
+  stats.served++;
   updateStats();
+
+  // Then sync to sheet in background
+  if (scriptURL) {
+    fetch(scriptURL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'scan', guestId:guestId, mealCol:mealCol})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.status === 'already_used') {
+        // Sheet says already used — update our result
+        diag('Sheet: already used for '+guestId);
+      }
+    })
+    .catch(function(e){ diag('Sheet sync error: '+e.message); });
+  }
 }
 
 function lookupName(id) {
-  var m = localMembers.find(function(x){ return x.id===id; });
+  var m = members.find(function(x){ return x.id === id; });
   return m ? m.firstName+' '+m.lastName : null;
 }
 
@@ -509,33 +671,30 @@ function showResult(type, name, id, detail) {
   playSound(type);
   var card = document.getElementById('result-card');
   card.className = 'result-card '+type;
-  var icons = {ok:'&#10003;', already:'&#9888;', denied:'&#10005;'};
-  var labels = {ok:'Approved', already:'Already Used', denied:'Not Authorized'};
+  var icons = {ok:'&#10003;',already:'&#9888;',denied:'&#10005;'};
+  var labels = {ok:'Approved',already:'Already Used',denied:'Not Found'};
   document.getElementById('result-icon').innerHTML = icons[type];
   document.getElementById('result-label').textContent = labels[type];
-  document.getElementById('result-name').textContent = name || id;
+  document.getElementById('result-name').textContent = name||id;
   document.getElementById('result-detail').textContent = id+' — '+detail;
   document.getElementById('result-meal').textContent = currentMeal==='breakfast'?'Breakfast':currentMeal==='lunch'?'Lunch':'Test';
-  var dayConf = DAYS_CONFIG.find(function(d){ return d.key===currentDay; });
-  document.getElementById('result-day').textContent = dayConf ? dayConf.label : currentDay;
+  var dc = DAYS.find(function(d){ return d.key===currentDay; });
+  document.getElementById('result-day').textContent = dc ? dc.label : currentDay;
   document.getElementById('result-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   card.style.display = 'block';
-
   var popup = document.getElementById('scan-popup');
   popup.className = 'scan-popup '+type;
   document.getElementById('popup-icon').innerHTML = icons[type];
-  document.getElementById('popup-status').textContent = {ok:'SUCCESS',already:'BLOCKED',denied:'DENIED'}[type];
-  document.getElementById('popup-name').textContent = name || id;
+  document.getElementById('popup-status').textContent = {ok:'SUCCESS',already:'BLOCKED',denied:'NOT FOUND'}[type];
+  document.getElementById('popup-name').textContent = name||id;
   document.getElementById('popup-detail').textContent = detail;
   popup.classList.add('show');
-  if (window._popupTimer) clearTimeout(window._popupTimer);
-  window._popupTimer = setTimeout(dismissPopup, type==='ok'?2200:3500);
-  setTimeout(function(){ if(card.className==='result-card '+type) card.style.display='none'; }, 6000);
+  if (window._pt) clearTimeout(window._pt);
+  window._pt = setTimeout(dismissPopup, type==='ok'?2200:3500);
+  setTimeout(function(){ if(card.className==='result-card '+type) card.style.display='none'; }, 7000);
 }
 
-function dismissPopup() {
-  document.getElementById('scan-popup').classList.remove('show');
-}
+function dismissPopup() { document.getElementById('scan-popup').classList.remove('show'); }
 
 function flash(color) {
   var f = document.getElementById('flash');
@@ -544,9 +703,10 @@ function flash(color) {
 }
 
 function addLog(status, name, id) {
-  scanLog.unshift({status:status, name:name, id:id, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
-  if (scanLog.length > 20) scanLog.pop();
+  scanLog.unshift({status:status,name:name,id:id,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if (scanLog.length > 30) scanLog.pop();
   var list = document.getElementById('log-list');
+  document.getElementById('log-count').textContent = scanLog.length;
   list.innerHTML = scanLog.map(function(e){
     return '<div class="log-entry"><div class="log-dot '+e.status+'"></div><div class="log-name">'+e.name+'</div><div class="log-meta">'+e.id+' · '+e.time+'</div></div>';
   }).join('');
@@ -555,54 +715,47 @@ function addLog(status, name, id) {
 function updateStats() {
   document.getElementById('stat-served').textContent = stats.served;
   document.getElementById('stat-blocked').textContent = stats.blocked;
-  document.getElementById('stat-total').textContent = localMembers.length;
+}
+
+function diag(msg) {
+  var box = document.getElementById('diag-box');
+  var ts = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  box.textContent = '['+ts+'] '+msg+'\n'+(box.textContent||'');
+  if (box.textContent.length > 800) box.textContent = box.textContent.substring(0,800);
+  // Show diag box only in test mode
+  if (currentMeal === 'test') box.classList.add('show');
 }
 
 function playSound(type) {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    if (type === 'ok') {
-      osc.frequency.setValueAtTime(520, ctx.currentTime);
-      osc.frequency.setValueAtTime(780, ctx.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.35);
-    } else if (type === 'already') {
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
-      var o2 = ctx.createOscillator(), g2 = ctx.createGain();
+    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    if (type==='ok') {
+      o.frequency.setValueAtTime(520,ctx.currentTime);
+      o.frequency.setValueAtTime(780,ctx.currentTime+0.12);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.35);
+    } else if (type==='already') {
+      o.frequency.setValueAtTime(440,ctx.currentTime);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.15);
+      var o2=ctx.createOscillator(),g2=ctx.createGain();
       o2.connect(g2); g2.connect(ctx.destination);
-      o2.frequency.setValueAtTime(440, ctx.currentTime + 0.2);
-      g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
-      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      o2.start(ctx.currentTime + 0.2); o2.stop(ctx.currentTime + 0.35);
+      o2.frequency.setValueAtTime(440,ctx.currentTime+0.2);
+      g2.gain.setValueAtTime(0.3,ctx.currentTime+0.2);
+      g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+      o2.start(ctx.currentTime+0.2); o2.stop(ctx.currentTime+0.35);
     } else {
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.setValueAtTime(180, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.45);
+      o.frequency.setValueAtTime(300,ctx.currentTime);
+      o.frequency.setValueAtTime(180,ctx.currentTime+0.2);
+      g.gain.setValueAtTime(0.35,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.45);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.45);
     }
   } catch(e) {}
-}
-
-function fetchGuestCount() {
-  if (!sheetURL) return;
-  fetch(sheetURL)
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (data.guests) {
-        document.getElementById('stat-total').textContent = data.guests.length;
-      }
-    }).catch(function(){});
 }
 </script>
 </body>
