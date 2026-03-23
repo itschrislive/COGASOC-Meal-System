@@ -218,7 +218,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);min
   </div>
 
   <div class="scanner-wrap" id="scanner-wrap">
-    <video id="camera-video" playsinline autoplay muted></video>
+    <video id="camera-video" playsinline autoplay muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
     <div class="scanner-overlay">
       <div class="scan-frame"><div class="scan-line"></div><div class="cbr"></div><div class="cbl"></div></div>
     </div>
@@ -276,7 +276,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);min
 
   <!-- CAMERA -->
   <div class="scanner-wrap" id="scanner-wrap">
-    <video id="camera-video" playsinline autoplay muted></video>
+    <video id="camera-video" playsinline autoplay muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
     <div class="scanner-overlay">
       <div class="scan-frame">
         <div class="scan-line"></div>
@@ -428,18 +428,34 @@ async function toggleCamera() {
 
 async function startCamera() {
   try {
-    const constraints = {video: {facingMode:'environment', width:{ideal:640}, height:{ideal:640}}};
+    const constraints = {video: {facingMode:{exact:'environment'}, width:{ideal:1280}, height:{ideal:1280}}};
     videoStream = await navigator.mediaDevices.getUserMedia(constraints);
     const video = document.getElementById('camera-video');
     video.srcObject = videoStream;
+    await video.play().catch(()=>{});
     video.style.display = 'block';
     document.getElementById('scanner-placeholder').style.display = 'none';
     scanning = true;
     document.getElementById('scan-toggle').textContent = 'Stop Camera';
     document.getElementById('scan-toggle').classList.add('scanning');
-    scanInterval = setInterval(scanFrame, 200);
+    scanInterval = setInterval(scanFrame, 150);
   } catch(e) {
-    alert('Camera access denied. Use manual lookup instead.');
+    // If exact environment camera fails, try without exact
+    try {
+      const fallback = {video: {facingMode:'environment', width:{ideal:1280}, height:{ideal:1280}}};
+      videoStream = await navigator.mediaDevices.getUserMedia(fallback);
+      const video = document.getElementById('camera-video');
+      video.srcObject = videoStream;
+      await video.play().catch(()=>{});
+      video.style.display = 'block';
+      document.getElementById('scanner-placeholder').style.display = 'none';
+      scanning = true;
+      document.getElementById('scan-toggle').textContent = 'Stop Camera';
+      document.getElementById('scan-toggle').classList.add('scanning');
+      scanInterval = setInterval(scanFrame, 150);
+    } catch(e2) {
+      alert('Camera access denied. Please allow camera access and try again, or use Manual Lookup.');
+    }
   }
 }
 
@@ -464,10 +480,10 @@ function scanFrame() {
   scanCanvas.height = video.videoHeight;
   scanCtx.drawImage(video, 0, 0);
   const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-  const code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'dontInvert'});
+  const code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'});
   if (code) {
     const now = Date.now();
-    if (code.data !== lastScannedId || now - lastScanTime > 3000) {
+    if (code.data !== lastScannedId || now - lastScanTime > 4000) {
       lastScannedId = code.data;
       lastScanTime = now;
       processQR(code.data);
