@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- COGASOC v3.1 built 2026-03-23 03:17:02 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -482,7 +483,7 @@ window.addEventListener('DOMContentLoaded', function() {
   if(csvURL || scriptURL) loadFromSheet(function(){});
 });
 
-/* ── TABS ── */
+/* -- TABS -- */
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active', TABS_LIST[i]===tab); });
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
@@ -499,11 +500,11 @@ function manualRefresh() {
     if(tab==='members') renderMembers();
     else if(tab==='checkin') renderCheckin();
     else if(tab==='admin') renderAdmin();
-    showToast('Refreshed — '+members.length+' members loaded');
+    showToast('Refreshed - '+members.length+' members loaded');
   });
 }
 
-/* ── LOAD FROM SHEET ── */
+/* -- LOAD FROM SHEET -- */
 function setSyncDot(state) {
   var el = document.getElementById('sync-dot');
   if(state==='syncing'){el.textContent='Syncing...';el.className='sync-indicator syncing';}
@@ -594,7 +595,7 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ── REGISTER ── */
+/* -- REGISTER -- */
 function selPay(el) {
   document.querySelectorAll('#panel-onsite .pill').forEach(function(p){ p.className='pill'; });
   selPayment = el.dataset.val;
@@ -654,7 +655,7 @@ function showCardResult(m) {
   document.getElementById('d-id').textContent=m.id;
   document.getElementById('d-tab').textContent=m.tabernacle||'--';
   document.getElementById('d-age').textContent=AGE[m.ageGroup]||'--';
-  document.getElementById('d-pay').textContent=PAY[m.paymentType]+(m.balanceNotes?' — '+m.balanceNotes:'');
+  document.getElementById('d-pay').textContent=PAY[m.paymentType]+(m.balanceNotes?' - '+m.balanceNotes:'');
   document.getElementById('d-email').textContent=m.email||'--';
   document.getElementById('d-phone').textContent=m.phone||'--';
   document.getElementById('d-notes').textContent=m.notes||'--';
@@ -664,7 +665,7 @@ function showCardResult(m) {
   showToast(m.firstName+' registered!');
 }
 
-/* ── CHECK IN ── */
+/* -- CHECK IN -- */
 function renderCheckin() {
   var q=(document.getElementById('ci-search').value||'thrust').toLowerCase().replace('thrust','');
   var ftab=document.getElementById('ci-ftab').value;
@@ -697,35 +698,45 @@ function renderCheckin() {
 }
 
 function openCheckinCard(id) {
-  var m=members.find(function(x){return x.id===id;});
-  if(!m)return;
-  var hasBalance=m.paymentType==='balance';
-  var html='<div class="ci-card">'
-    +'<div class="ci-head"><div class="ci-head-name">'+m.firstName+' '+m.lastName+'</div><div class="ci-head-id">ID: '+m.id+' · Registered '+new Date(m.registeredAt||Date.now()).toLocaleDateString()+'</div></div>'
-    +(hasBalance?'<div style="background:var(--red-bg);border-bottom:1px solid rgba(153,27,27,0.2);padding:12px 22px;font-size:13px;font-weight:700;color:var(--red);">Balance Due — '+(m.balanceNotes||'see notes')+'. Collect before handing package.</div>':'')
-    +'<div class="ci-body">'
-    +'<div class="ci-row"><span class="ci-lbl">Tabernacle</span><span class="ci-val">'+(m.tabernacle||'--')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Age Group</span><span class="ci-val">'+( AGE[m.ageGroup]||'--')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Payment</span><span class="ci-val"><span class="tag '+( hasBalance?'tag-balance':'tag-paid')+'">'+( hasBalance?'Balance Due':'Paid in Full')+'</span></span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Contact</span><span class="ci-val" style="font-size:13px;">'+(m.email||'')+( m.email&&m.phone?' · ':'')+(m.phone||'')||'--'+'</span></div>'
-    +'</div>'
-    +'<div class="ci-footer">'
-    +'<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button>'
-    +(hasBalance
-      ?'<button class="btn-primary" style="background:#B91C1C;" onclick="sendToRegistration()'>&#8594; Send to Registration Desk</button>'
-      :'<button class="btn-green" onclick="confirmCheckin(\''+id+'\')">&#10003; Confirm Check In &amp; Hand Over Package</button>'
-    )
-    +'</div></div>';
-  document.getElementById('ci-member-card').innerHTML=html;
-  document.getElementById('ci-member-card').style.display='block';
-  document.getElementById('ci-member-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+  var m = members.find(function(x){ return x.id === id; });
+  if (!m) return;
+  var hasBalance = m.paymentType === 'balance';
+  var card = document.getElementById('ci-member-card');
+
+  var headHTML = '<div class="ci-head">'
+    + '<div class="ci-head-name">' + m.firstName + ' ' + m.lastName + '</div>'
+    + '<div class="ci-head-id">ID: ' + m.id + ' - Registered ' + new Date(m.registeredAt || Date.now()).toLocaleDateString() + '</div>'
+    + '</div>';
+
+  var warningHTML = hasBalance
+    ? '<div style="background:var(--red-bg);border-bottom:1px solid rgba(153,27,27,0.2);padding:12px 22px;font-size:13px;font-weight:700;color:var(--red);">Balance Due - ' + (m.balanceNotes || 'see notes') + '. Collect before handing package.</div>'
+    : '';
+
+  var bodyHTML = '<div class="ci-body">'
+    + '<div class="ci-row"><span class="ci-lbl">Tabernacle</span><span class="ci-val">' + (m.tabernacle || '--') + '</span></div>'
+    + '<div class="ci-row"><span class="ci-lbl">Age Group</span><span class="ci-val">' + (AGE[m.ageGroup] || '--') + '</span></div>'
+    + '<div class="ci-row"><span class="ci-lbl">Payment</span><span class="ci-val"><span class="tag ' + (hasBalance ? 'tag-balance' : 'tag-paid') + '">' + (hasBalance ? 'Balance Due' : 'Paid in Full') + '</span></span></div>'
+    + '<div class="ci-row"><span class="ci-lbl">Email</span><span class="ci-val">' + (m.email || '--') + '</span></div>'
+    + '<div class="ci-row"><span class="ci-lbl">Phone</span><span class="ci-val">' + (m.phone || '--') + '</span></div>'
+    + '</div>';
+
+  var cancelBtn = '<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button>';
+  var actionBtn = hasBalance
+    ? '<button class="btn-primary" style="background:#B91C1C;" onclick="sendToRegistration()">Send to Registration Desk</button>'
+    : '<button class="btn-green" onclick="confirmCheckin('' + id + '')">Confirm Check In + Hand Over Package</button>';
+
+  var footerHTML = '<div class="ci-footer">' + cancelBtn + actionBtn + '</div>';
+
+  card.innerHTML = '<div class="ci-card">' + headHTML + warningHTML + bodyHTML + footerHTML + '</div>';
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 function closeCheckinCard() { document.getElementById('ci-member-card').style.display='none'; }
 
 function sendToRegistration() {
   closeCheckinCard();
-  showToast('Member has a balance due — direct to On-Site Registration desk.');
+  showToast('Member has a balance due - direct to On-Site Registration desk.');
 }
 
 function confirmCheckin(id) {
@@ -738,7 +749,7 @@ function confirmCheckin(id) {
   showToast(m.firstName+' '+m.lastName+' checked in!');
 }
 
-/* ── MEMBER LIST ── */
+/* -- MEMBER LIST -- */
 function renderMembers() {
   var q=(document.getElementById('ml-search').value||'thrust').toLowerCase().replace('thrust','');
   var ftab=document.getElementById('ml-ftab').value;
@@ -774,7 +785,7 @@ function removeMember(id) {
   renderMembers();
 }
 
-/* ── ADMIN ── */
+/* -- ADMIN -- */
 function renderAdmin() {
   var day = document.getElementById('admin-day').value;
   var total=members.length;
@@ -830,7 +841,7 @@ function renderAdminTable() {
   }).join('');
 }
 
-/* ── BADGES ── */
+/* -- BADGES -- */
 function makeBadge(m) {
   var html='<div class="id-card">';
   html+='<div class="id-top"><div class="id-org"><div class="id-org-name">COGASOC</div><div class="id-org-sub">Passover Event Pass</div></div><div class="id-gold-bar"></div></div>';
@@ -954,7 +965,7 @@ function copyLink(){
   navigator.clipboard.writeText(url).then(function(){showToast('Link copied!');}).catch(function(){prompt('Copy this:',url);});
 }
 
-/* ── BULK IMPORT ── */
+/* -- BULK IMPORT -- */
 function runBulkImport(){
   var raw=document.getElementById('import-text').value.trim();
   if(!raw){showToast('Paste some names first.');return;}
@@ -975,7 +986,7 @@ function runBulkImport(){
   showToast(imported.length+' members imported!');
 }
 
-/* ── SETUP ── */
+/* -- SETUP -- */
 function saveSetup(){
   csvURL=document.getElementById('csv-url-input').value.trim();
   scriptURL=document.getElementById('script-url-input').value.trim();
@@ -984,7 +995,7 @@ function saveSetup(){
   document.getElementById('setup-status').textContent='Saved! Loading members...';
   loadFromSheet(function(){
     document.getElementById('setup-status').textContent=members.length+' members loaded!';
-    showToast('Connected — '+members.length+' members loaded');
+    showToast('Connected - '+members.length+' members loaded');
   });
 }
 
@@ -995,18 +1006,21 @@ function testConnection(){
   });
 }
 
-/* ── SYNC WRITE ── */
+/* -- SYNC WRITE -- */
 function syncWrite(payload){
   if(!scriptURL)return;
   fetch(scriptURL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .catch(function(e){console.warn('Write failed',e);});
 }
 
-/* ── CSV EXPORT ── */
+/* -- CSV EXPORT -- */
 function exportCSV(){
   if(!members.length){showToast('No members to export.');return;}
   var h=['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
-  var rows=members.map(function(m){return [m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt,m.notes||''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');});
+  var rows=members.map(function(m){
+    var arr=[m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt,m.notes||''];
+    return arr.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');
+  });
   var csv=[h.join(',')].concat(rows).join('\n');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
