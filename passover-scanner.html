@@ -322,48 +322,91 @@ function buildDayBar() {
   });
 }
 
-/* ── LOAD MEMBERS FROM SHEET ── */
+/* -- LOAD MEMBERS FROM SHEET -- */
 function loadMembers() {
-  showSync('loading', 'Syncing members from sheet...');
-  // Try CSV first (faster, no auth)
-  var url = csvURL || scriptURL;
-  if (!url) { showSync('error', 'No sheet URL configured'); return; }
+  showSync('loading', 'Loading members...');
 
+  // Try CSV first (fastest, no auth needed)
   if (csvURL) {
-    fetch(csvURL + (csvURL.indexOf('?')>=0?'&':'?') + 't=' + Date.now())
-      .then(function(r){ return r.text(); })
-      .then(function(text){
+    var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
+    var url = csvURL + sep + 'cachebust=' + Date.now();
+    fetch(url)
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function(text) {
         var parsed = parseCSV(text);
         if (parsed.length > 1) {
-          var headers = parsed[0].map(function(h){ return h.trim(); });
-          members = parsed.slice(1).map(function(row){
+          var headers = parsed[0].map(function(h) { return h.trim(); });
+          members = parsed.slice(1).map(function(row) {
             var o = {};
-            headers.forEach(function(h,i){ o[h] = (row[i]||'').trim(); });
+            headers.forEach(function(h, i) { o[h] = (row[i] || '').trim(); });
             return {
               id: o.GuestID || o.ID || '',
               firstName: o.FirstName || o['First Name'] || '',
               lastName: o.LastName || o['Last Name'] || '',
               tabernacle: o.Tabernacle || '',
-              ageGroup: o.AgeGroup || '',
-              paymentType: o.PaymentType || '',
-              checkinStatus: o.CheckinStatus || 'pending'
+              ageGroup: (o.AgeGroup || '').toLowerCase(),
+              paymentType: (o.PaymentType || '').toLowerCase(),
+              checkinStatus: (o.CheckinStatus || 'pending').toLowerCase()
             };
-          }).filter(function(m){ return m.id && m.firstName; });
+          }).filter(function(m) { return m.id && m.firstName; });
           document.getElementById('stat-total').textContent = members.length;
           showSync('ok', members.length + ' members loaded');
-          diag('CSV loaded: ' + members.length + ' members\nFirst: ' + (members[0]?members[0].firstName+' '+members[0].lastName:'none'));
+          diag('CSV OK: ' + members.length + ' members. First: ' + (members[0] ? members[0].firstName : 'none'));
+          if (callback_after_load) { callback_after_load(); callback_after_load = null; }
         } else {
-          showSync('error', 'CSV appears empty — check sheet is published');
+          showSync('error', 'CSV empty - check sheet is published');
+          diag('CSV empty or header only');
+          tryScriptLoad();
         }
       })
-      .catch(function(e){
-        showSync('error', 'CSV error: ' + e.message);
-        diag('CSV FAIL: ' + e.message);
-        if (scriptURL) loadMembersViaScript();
+      .catch(function(e) {
+        diag('CSV failed: ' + e.message + ' - trying script...');
+        tryScriptLoad();
       });
-  } else if (scriptURL) {
-    loadMembersViaScript();
+  } else {
+    tryScriptLoad();
   }
+}
+
+var callback_after_load = null;
+
+function tryScriptLoad() {
+  if (!scriptURL) {
+    showSync('error', 'No URLs set - tap Settings');
+    return;
+  }
+  showSync('loading', 'Trying script endpoint...');
+  fetch(scriptURL + '?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.guests && data.guests.length > 0) {
+        members = data.guests.map(function(g) {
+          return {
+            id: g.GuestID || '',
+            firstName: g.FirstName || '',
+            lastName: g.LastName || '',
+            tabernacle: g.Tabernacle || '',
+            ageGroup: (g.AgeGroup || '').toLowerCase(),
+            paymentType: (g.PaymentType || '').toLowerCase(),
+            checkinStatus: (g.CheckinStatus || 'pending').toLowerCase()
+          };
+        }).filter(function(m) { return m.id && m.firstName; });
+        document.getElementById('stat-total').textContent = members.length;
+        showSync('ok', members.length + ' members loaded via script');
+        diag('Script OK: ' + members.length + ' members');
+        if (callback_after_load) { callback_after_load(); callback_after_load = null; }
+      } else {
+        showSync('error', 'No members found in sheet');
+        diag('Script returned no guests');
+      }
+    })
+    .catch(function(e) {
+      showSync('error', 'Cannot reach sheet: ' + e.message);
+      diag('Script failed: ' + e.message);
+    });
 }
 
 function loadMembersViaScript() {
@@ -398,8 +441,9 @@ function loadMembersViaScript() {
 function parseCSV(text) {
   var rows = [];
   var lines = text.split('\n');
-  lines.forEach(function(line) {
-    if (!line.trim()) return;
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    if (!line.trim()) continue;
     var row = [], cur = '', inQ = false;
     for (var i = 0; i < line.length; i++) {
       var ch = line[i];
@@ -409,7 +453,7 @@ function parseCSV(text) {
     }
     row.push(cur);
     rows.push(row);
-  });
+  }
   return rows;
 }
 
@@ -420,17 +464,17 @@ function showSync(type, msg) {
   if (type === 'ok') setTimeout(function(){ bar.classList.remove('show'); }, 3000);
 }
 
-/* ── SETUP ── */
+/* -- SETUP -- */
 function saveSetup() {
   scriptURL = document.getElementById('setup-script-url').value.trim();
   csvURL = document.getElementById('setup-csv-url').value.trim();
   localStorage.setItem('passover_sheet_url', scriptURL);
   localStorage.setItem('passover_csv_url', csvURL);
-  document.getElementById('setup-status').textContent = 'Saved! Loading members...';
+  document.getElementById('setup-status').textContent = 'Saved! Loading...';
   loadMembers();
-  setTimeout(function(){
+  setTimeout(function() {
     document.getElementById('setup-overlay').style.display = 'none';
-  }, 1500);
+  }, 2000);
 }
 function skipSetup() { document.getElementById('setup-overlay').style.display = 'none'; }
 function showSettings() {
@@ -440,7 +484,7 @@ function showSettings() {
   document.getElementById('setup-overlay').style.display = 'flex';
 }
 
-/* ── MEAL / DAY ── */
+/* -- MEAL / DAY -- */
 function setMeal(meal) {
   currentMeal = meal;
   var isTest = meal === 'test';
@@ -451,44 +495,81 @@ function setMeal(meal) {
   document.getElementById('scanner-wrap').style.borderColor = isTest ? '#6366F1' : 'var(--navy2)';
 }
 
-/* ── CAMERA ── */
+/* -- CAMERA -- */
 function toggleCamera() {
   if (scanning) stopCamera(); else startCamera();
 }
 
 function startCamera() {
   var video = document.getElementById('camera-video');
-  // Try back camera first, fall back to any camera
-  var tryCamera = function(constraints) {
-    return navigator.mediaDevices.getUserMedia(constraints)
-      .then(function(stream) {
-        videoStream = stream;
-        video.srcObject = stream;
-        return new Promise(function(resolve) {
-          video.onloadedmetadata = function() {
-            video.play().then(resolve).catch(resolve);
-          };
-        });
-      });
+
+  // iOS Safari requires specific constraints
+  var constraints = {
+    video: {
+      facingMode: 'environment',
+      width: { ideal: 1280, max: 1920 },
+      height: { ideal: 720, max: 1080 }
+    }
   };
 
-  tryCamera({video:{facingMode:{exact:'environment'},width:{ideal:1280},height:{ideal:1280}}})
-    .catch(function(){ return tryCamera({video:{facingMode:'environment'}}); })
-    .catch(function(){ return tryCamera({video:true}); })
-    .then(function() {
-      video.style.display = 'block';
-      document.getElementById('scanner-placeholder').style.display = 'none';
-      scanning = true;
-      document.getElementById('scan-toggle').textContent = 'Stop Camera';
-      document.getElementById('scan-toggle').classList.add('scanning');
-      // Wait a moment for video to stabilize before scanning
-      setTimeout(function(){ scanInterval = setInterval(scanFrame, 200); }, 500);
-      diag('Camera started: ' + (video.videoWidth||'?') + 'x' + (video.videoHeight||'?'));
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      videoStream = stream;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('autoplay', '');
+      video.setAttribute('muted', '');
+      video.srcObject = stream;
+
+      // iOS needs explicit play() call
+      var playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(function() {
+          onCameraReady(video);
+        }).catch(function(e) {
+          diag('play() error: ' + e.message);
+          // Try anyway
+          onCameraReady(video);
+        });
+      } else {
+        setTimeout(function() { onCameraReady(video); }, 500);
+      }
     })
     .catch(function(e) {
-      alert('Camera error: ' + e.message + '\n\nUse Manual Lookup instead.');
-      diag('Camera FAIL: ' + e.message);
+      diag('Camera error: ' + e.message);
+      // Try with basic constraints as fallback
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          videoStream = stream;
+          video.srcObject = stream;
+          video.play().then(function() { onCameraReady(video); }).catch(function() { onCameraReady(video); });
+        })
+        .catch(function(e2) {
+          alert('Camera access denied. Please allow camera access in your browser settings, then try again.');
+          diag('Camera fallback failed: ' + e2.message);
+        });
     });
+}
+
+function onCameraReady(video) {
+  video.style.display = 'block';
+  document.getElementById('scanner-placeholder').style.display = 'none';
+  scanning = true;
+  document.getElementById('scan-toggle').textContent = 'Stop Camera';
+  document.getElementById('scan-toggle').classList.add('scanning');
+  // Wait for video to have dimensions before scanning
+  var attempts = 0;
+  var waitForVideo = setInterval(function() {
+    attempts++;
+    if (video.videoWidth > 0) {
+      clearInterval(waitForVideo);
+      diag('Video ready: ' + video.videoWidth + 'x' + video.videoHeight);
+      scanInterval = setInterval(scanFrame, 200);
+    } else if (attempts > 30) {
+      clearInterval(waitForVideo);
+      diag('Video dimensions never came - starting scan anyway');
+      scanInterval = setInterval(scanFrame, 200);
+    }
+  }, 100);
 }
 
 function stopCamera() {
@@ -523,7 +604,7 @@ function scanFrame() {
   }
 }
 
-/* ── PROCESSING ── */
+/* -- PROCESSING -- */
 function processQR(qrText) {
   var guestId, guestName;
   try {
@@ -535,7 +616,7 @@ function processQR(qrText) {
   checkIn(guestId, guestName);
 }
 
-/* ── MANUAL SEARCH ── */
+/* -- MANUAL SEARCH -- */
 function doSearch() {
   var val = document.getElementById('manual-input').value.trim();
   if (!val) return;
@@ -571,7 +652,7 @@ function doSearch() {
   box.innerHTML = results.slice(0,6).map(function(m){
     return '<div class="search-result-item" onclick="selectMember(\''+m.id+'\',\''+m.firstName+' '+m.lastName+'\')">'
       +'<div><div class="sri-name">'+m.firstName+' '+m.lastName+'</div>'
-      +'<div class="sri-detail">'+(m.tabernacle||'')+(m.tabernacle&&m.ageGroup?' · ':'')+capitalize(m.ageGroup||'')+'</div></div>'
+      +'<div class="sri-detail">'+(m.tabernacle||'')+(m.tabernacle&&m.ageGroup?' . ':'')+capitalize(m.ageGroup||'')+'</div></div>'
       +'<button class="sri-btn">Check In</button>'
       +'</div>';
   }).join('');
@@ -585,7 +666,7 @@ function selectMember(id, name) {
 
 function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
 
-/* ── CHECK IN ── */
+/* -- CHECK IN -- */
 function checkIn(guestId, guestName) {
   var isTest = currentMeal === 'test' || currentDay === 'TEST';
   var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
@@ -595,7 +676,7 @@ function checkIn(guestId, guestName) {
     var fakeName = name || guestId;
     var outcomes = ['ok','ok','ok','already','denied'];
     var pick = outcomes[Math.floor(Math.random()*outcomes.length)];
-    var msgs = {ok:'Test scan — would approve',already:'Test scan — already used',denied:'Test scan — would deny'};
+    var msgs = {ok:'Test scan - would approve',already:'Test scan - already used',denied:'Test scan - would deny'};
     showResult(pick, fakeName, guestId, msgs[pick]);
     flash(pick==='ok'?'green':pick==='already'?'amber':'red');
     addLog(pick, fakeName, guestId);
@@ -607,7 +688,7 @@ function checkIn(guestId, guestName) {
   var scans = JSON.parse(localStorage.getItem(cacheKey) || '{}');
 
   if (!name && members.length === 0) {
-    showResult('denied', guestId, guestId, 'Members not loaded — check Settings');
+    showResult('denied', guestId, guestId, 'Members not loaded - check Settings');
     flash('red');
     addLog('denied', guestId, guestId);
     stats.blocked++;
@@ -625,7 +706,7 @@ function checkIn(guestId, guestName) {
   }
 
   if (scans[guestId]) {
-    // Already used locally — show immediately, also verify with sheet
+    // Already used locally - show immediately, also verify with sheet
     showResult('already', name, guestId, currentMeal+' already used today');
     flash('amber');
     addLog('already', name, guestId);
@@ -653,7 +734,7 @@ function checkIn(guestId, guestName) {
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.status === 'already_used') {
-        // Sheet says already used — update our result
+        // Sheet says already used - update our result
         diag('Sheet: already used for '+guestId);
       }
     })
@@ -666,17 +747,17 @@ function lookupName(id) {
   return m ? m.firstName+' '+m.lastName : null;
 }
 
-/* ── UI ── */
+/* -- UI -- */
 function showResult(type, name, id, detail) {
   playSound(type);
   var card = document.getElementById('result-card');
   card.className = 'result-card '+type;
-  var icons = {ok:'&#10003;',already:'&#9888;',denied:'&#10005;'};
+  var icons = {ok:'V',already:'!',denied:'X'};
   var labels = {ok:'Approved',already:'Already Used',denied:'Not Found'};
   document.getElementById('result-icon').innerHTML = icons[type];
   document.getElementById('result-label').textContent = labels[type];
   document.getElementById('result-name').textContent = name||id;
-  document.getElementById('result-detail').textContent = id+' — '+detail;
+  document.getElementById('result-detail').textContent = id+' - '+detail;
   document.getElementById('result-meal').textContent = currentMeal==='breakfast'?'Breakfast':currentMeal==='lunch'?'Lunch':'Test';
   var dc = DAYS.find(function(d){ return d.key===currentDay; });
   document.getElementById('result-day').textContent = dc ? dc.label : currentDay;
@@ -708,7 +789,7 @@ function addLog(status, name, id) {
   var list = document.getElementById('log-list');
   document.getElementById('log-count').textContent = scanLog.length;
   list.innerHTML = scanLog.map(function(e){
-    return '<div class="log-entry"><div class="log-dot '+e.status+'"></div><div class="log-name">'+e.name+'</div><div class="log-meta">'+e.id+' · '+e.time+'</div></div>';
+    return '<div class="log-entry"><div class="log-dot '+e.status+'"></div><div class="log-name">'+e.name+'</div><div class="log-meta">'+e.id+' . '+e.time+'</div></div>';
   }).join('');
 }
 
