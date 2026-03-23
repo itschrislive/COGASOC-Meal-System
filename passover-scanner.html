@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>COGASOC — Meal Scanner</title>
+<title>COGASOC Meal Scanner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -155,30 +155,47 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 </head>
 <body>
 
+<!-- SETUP OVERLAY -->
 <div class="setup-overlay" id="setup-overlay">
   <div class="setup-box">
     <h2>Scanner Setup</h2>
-    <p>Enter your Google Apps Script URL. This connects the scanner to your member sheet for live lookups and meal tracking.</p>
-    <span class="setup-label">Apps Script URL (read + write)</span>
-    <input class="setup-input" id="setup-script-url" type="text" placeholder="https://script.google.com/macros/s/…/exec">
-    <span class="setup-label">Published CSV URL (member list)</span>
-    <input class="setup-input" id="setup-csv-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv">
-    <button class="setup-save" onclick="saveSetup()">Save &amp; Sync Members</button>
-    <div class="setup-status" id="setup-status"></div>
-    <button class="setup-skip" onclick="skipSetup()">Skip for now</button>
+
+    <div style="background:var(--green-bg);border:1.5px solid rgba(22,163,74,0.25);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Option 1 - Upload Member List (Recommended)</div>
+      <p style="font-size:12px;color:var(--mid);margin-bottom:10px;line-height:1.6;">Export your Google Sheet as CSV and upload here. Saved to this device, works offline.</p>
+      <label for="csv-file-upload" style="display:block;background:var(--navy);color:#fff;text-align:center;padding:10px;border-radius:8px;font-family:Nunito,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Choose CSV File</label>
+      <input type="file" id="csv-file-upload" accept=".csv" style="display:none;" onchange="handleCSVUpload(this)">
+      <div id="upload-status" style="font-size:12px;font-weight:700;margin-top:8px;min-height:18px;color:var(--green);"></div>
+    </div>
+
+    <div style="background:var(--navy-pale);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Option 2 - Live Sheet Sync</div>
+      <span class="setup-label">CSV URL</span>
+      <input class="setup-input" id="setup-csv-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+      <span class="setup-label">Apps Script URL</span>
+      <input class="setup-input" id="setup-script-url" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+      <button class="setup-save" onclick="saveSetup()">Connect and Sync</button>
+    </div>
+
+    <div id="setup-status" style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:8px;min-height:18px;text-align:center;"></div>
+    <button class="setup-skip" onclick="skipSetup()">Close</button>
   </div>
 </div>
 
+<!-- FLASH -->
 <div class="flash" id="flash"></div>
+
+<!-- BIG POPUP -->
 <div class="scan-popup" id="scan-popup" onclick="dismissPopup()">
   <div class="scan-popup-inner">
-    <span class="popup-icon" id="popup-icon">&#10003;</span>
+    <span class="popup-icon" id="popup-icon">V</span>
     <div class="popup-status" id="popup-status">SUCCESS</div>
     <div class="popup-name" id="popup-name"></div>
     <div class="popup-detail" id="popup-detail"></div>
   </div>
 </div>
 
+<!-- HEADER -->
 <div class="header">
   <div class="header-brand">
     <div class="header-title">Meal Scanner</div>
@@ -191,8 +208,8 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
   </div>
 </div>
 
-<div class="sync-bar" id="sync-bar">Syncing members...</div>
-<div class="test-banner" id="test-banner">TEST MODE — scans will NOT be recorded</div>
+<div class="sync-bar" id="sync-bar">Loading...</div>
+<div class="test-banner" id="test-banner">TEST MODE - scans will NOT be recorded</div>
 <div class="day-bar" id="day-bar"></div>
 
 <div class="main">
@@ -205,15 +222,15 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 
   <div class="result-card" id="result-card">
     <div class="result-status">
-      <div class="status-icon" id="result-icon">&#10003;</div>
+      <div class="status-icon" id="result-icon">V</div>
       <div class="status-label" id="result-label">Approved</div>
     </div>
     <div class="result-name" id="result-name"></div>
     <div class="result-detail" id="result-detail"></div>
     <div class="result-meta">
-      <div class="meta-box"><div class="meta-lbl">Meal</div><div class="meta-val" id="result-meal">—</div></div>
-      <div class="meta-box"><div class="meta-lbl">Day</div><div class="meta-val" id="result-day">—</div></div>
-      <div class="meta-box"><div class="meta-lbl">Time</div><div class="meta-val" id="result-time">—</div></div>
+      <div class="meta-box"><div class="meta-lbl">Meal</div><div class="meta-val" id="result-meal">-</div></div>
+      <div class="meta-box"><div class="meta-lbl">Day</div><div class="meta-val" id="result-day">-</div></div>
+      <div class="meta-box"><div class="meta-lbl">Time</div><div class="meta-val" id="result-time">-</div></div>
     </div>
   </div>
 
@@ -233,13 +250,13 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 
   <div class="controls">
     <button class="ctrl-btn" id="scan-toggle" onclick="toggleCamera()">Start Camera</button>
-    <button class="ctrl-btn" onclick="showSettings()">&#9881; Settings</button>
+    <button class="ctrl-btn" onclick="showSettings()">Settings</button>
   </div>
 
   <div class="manual-section">
-    <h3>Manual Lookup — Search by Name or ID</h3>
+    <h3>Manual Lookup - Search by Name or ID</h3>
     <div class="manual-row">
-      <input class="manual-input" id="manual-input" type="text" placeholder="Type first name, last name, or ID...">
+      <input class="manual-input" id="manual-input" type="text" placeholder="Type name or ID...">
       <button class="manual-btn" onclick="doSearch()">Search</button>
     </div>
     <div class="search-results" id="search-results"></div>
@@ -248,7 +265,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
   <div class="diag-box" id="diag-box"></div>
 
   <div class="recent-log">
-    <h3>Recent Scans — <span id="log-count">0</span> today</h3>
+    <h3>Recent Scans - <span id="log-count">0</span> today</h3>
     <div id="log-list"><div style="padding:16px 0;font-size:13px;color:var(--muted);text-align:center;">No scans yet</div></div>
   </div>
 
@@ -319,60 +336,140 @@ function buildDayBar() {
 
 /* LOAD MEMBERS */
 function loadMembers() {
-  if (!csvURL && !scriptURL) { showSync('error', 'No URLs - tap Settings'); return; }
-  showSync('loading', 'Loading members...');
-  if (csvURL) {
-    var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
-    fetch(csvURL + sep + 't=' + Date.now())
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        // Strip BOM, normalize line endings
-        text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        var rows = parseCSV(text);
-        diag('CSV rows: ' + rows.length + ' | Headers: ' + (rows[0] ? rows[0].slice(0,5).join('|') : 'none'));
-        if (rows.length > 1) {
-          var hdrs = rows[0].map(function(h) { return h.replace(/^\uFEFF/,'').replace(/[\r\n"]/g,'').trim(); });
-          var loaded = [];
-          for (var i = 1; i < rows.length; i++) {
-            var row = rows[i];
-            var o = {};
-            hdrs.forEach(function(h, idx) { o[h] = (row[idx] || '').replace(/[\r\n]/g,'').trim(); });
-            var id = o.GuestID || o.ID || o['Guest ID'] || '';
-            var fn = o.FirstName || o['First Name'] || '';
-            var ln = o.LastName || o['Last Name'] || '';
-            if (id && fn) loaded.push({
-              id: id, firstName: fn, lastName: ln,
-              tabernacle: o.Tabernacle || '',
-              ageGroup: (o.AgeGroup || '').toLowerCase(),
-              paymentType: (o.PaymentType || '').toLowerCase(),
-              checkinStatus: (o.CheckinStatus || 'pending').toLowerCase()
-            });
-          }
-          members = loaded;
-          document.getElementById('stat-total').textContent = members.length;
-          if (members.length > 0) {
-            showSync('ok', members.length + ' members loaded');
-            diag('Loaded: ' + members.length + ' | First: ' + members[0].firstName + ' ' + members[0].lastName + ' | ID: ' + members[0].id);
-          } else {
-            showSync('error', '0 members - GuestID column may be empty');
-            diag('0 members. Headers: ' + hdrs.join('|'));
-            if (scriptURL) loadViaScript();
-          }
-        } else {
-          showSync('error', 'CSV empty');
-          diag('CSV empty. Length: ' + text.length + ' First 100: ' + text.substring(0,100));
-          if (scriptURL) loadViaScript();
-        }
-      })
-      .catch(function(e) {
-        diag('CSV failed: ' + e.message);
-        if (scriptURL) loadViaScript();
-        else showSync('error', 'Cannot load CSV: ' + e.message);
-      });
+  // Check localStorage first - populated by CSV upload or registration portal
+  var stored = localStorage.getItem('cogasoc_members');
+  if (stored) {
+    try {
+      var parsed = JSON.parse(stored);
+      if (parsed && parsed.length > 0) {
+        members = parsed.map(function(m) {
+          return {
+            id: String(m.id || m.GuestID || '').trim(),
+            firstName: String(m.firstName || m.FirstName || '').trim(),
+            lastName: String(m.lastName || m.LastName || '').trim(),
+            tabernacle: String(m.tabernacle || m.Tabernacle || '').trim(),
+            ageGroup: String(m.ageGroup || m.AgeGroup || '').toLowerCase().trim(),
+            paymentType: String(m.paymentType || m.PaymentType || '').toLowerCase().trim(),
+            checkinStatus: String(m.checkinStatus || m.CheckinStatus || 'pending').toLowerCase().trim()
+          };
+        }).filter(function(m) { return m.id && m.firstName; });
+        document.getElementById('stat-total').textContent = members.length;
+        var src = localStorage.getItem('cogasoc_members_source') || 'device';
+        showSync('ok', members.length + ' members loaded (' + src + ')');
+        diag('Loaded ' + members.length + ' from localStorage. First: ' + members[0].firstName + ' ' + members[0].id);
+        return;
+      }
+    } catch(e) { diag('localStorage error: ' + e.message); }
+  }
+  // Fall back to sheet sync
+  if (csvURL || scriptURL) {
+    showSync('loading', 'Loading from sheet...');
+    if (csvURL) fetchCSV();
+    else loadViaScript();
   } else {
-    loadViaScript();
+    showSync('error', 'No members - tap Settings to upload CSV or connect sheet');
+    diag('No localStorage data and no URLs set');
   }
 }
+
+function handleCSVUpload(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var status = document.getElementById('upload-status');
+  status.textContent = 'Reading file...';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    var rows = parseCSV(text);
+    diag('File CSV rows: ' + rows.length);
+    if (rows.length < 2) {
+      status.style.color = 'var(--red)';
+      status.textContent = 'File appears empty or invalid';
+      return;
+    }
+    var hdrs = rows[0].map(function(h) { return h.replace(/^\uFEFF/,'').replace(/[\r\n"]/g,'').trim(); });
+    diag('Headers: ' + hdrs.slice(0,6).join('|'));
+    var loaded = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var o = {};
+      hdrs.forEach(function(h, idx) { o[h] = (row[idx] || '').replace(/[\r\n]/g,'').trim(); });
+      var id = o.GuestID || o.ID || o['Guest ID'] || '';
+      var fn = o.FirstName || o['First Name'] || '';
+      var ln = o.LastName || o['Last Name'] || '';
+      if (id && fn) loaded.push({
+        id: id, firstName: fn, lastName: ln,
+        tabernacle: o.Tabernacle || '',
+        ageGroup: (o.AgeGroup || '').toLowerCase(),
+        paymentType: (o.PaymentType || '').toLowerCase(),
+        checkinStatus: (o.CheckinStatus || 'pending').toLowerCase()
+      });
+    }
+    if (loaded.length === 0) {
+      status.style.color = '#B91C1C';
+      status.textContent = 'No members found - check GuestID column exists';
+      diag('0 members from file. Headers: ' + hdrs.join('|'));
+      return;
+    }
+    // Save to localStorage
+    localStorage.setItem('cogasoc_members', JSON.stringify(loaded));
+    localStorage.setItem('cogasoc_members_source', 'uploaded CSV');
+    localStorage.setItem('cogasoc_members_updated', new Date().toLocaleString());
+    members = loaded;
+    document.getElementById('stat-total').textContent = members.length;
+    status.style.color = 'var(--green)';
+    status.textContent = members.length + ' members loaded from ' + file.name;
+    document.getElementById('setup-status').textContent = members.length + ' members ready!';
+    showSync('ok', members.length + ' members loaded from CSV');
+    diag('File upload: ' + members.length + ' members saved. First: ' + members[0].firstName + ' ' + members[0].id);
+    setTimeout(function() { document.getElementById('setup-overlay').style.display = 'none'; }, 1500);
+  };
+  reader.readAsText(file);
+}
+
+function fetchCSV() {
+  var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
+  fetch(csvURL + sep + 't=' + Date.now())
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      var rows = parseCSV(text);
+      if (rows.length > 1) {
+        var hdrs = rows[0].map(function(h) { return h.replace(/^\uFEFF/,'').replace(/[\r\n"]/g,'').trim(); });
+        var loaded = [];
+        for (var i = 1; i < rows.length; i++) {
+          var row = rows[i];
+          var o = {};
+          hdrs.forEach(function(h, idx) { o[h] = (row[idx] || '').replace(/[\r\n]/g,'').trim(); });
+          var id = o.GuestID || o.ID || '';
+          var fn = o.FirstName || o['First Name'] || '';
+          if (id && fn) loaded.push({id:id, firstName:fn, lastName:o.LastName||o['Last Name']||'', tabernacle:o.Tabernacle||'', ageGroup:(o.AgeGroup||'').toLowerCase(), paymentType:(o.PaymentType||'').toLowerCase(), checkinStatus:(o.CheckinStatus||'pending').toLowerCase()});
+        }
+        if (loaded.length > 0) {
+          localStorage.setItem('cogasoc_members', JSON.stringify(loaded));
+          localStorage.setItem('cogasoc_members_source', 'sheet sync');
+          members = loaded;
+          document.getElementById('stat-total').textContent = members.length;
+          showSync('ok', members.length + ' members synced from sheet');
+          diag('Sheet CSV: ' + members.length + ' members');
+        } else {
+          showSync('error', '0 members - GuestID column may be empty');
+          diag('Sheet CSV: 0 members. Headers: ' + hdrs.join('|'));
+          if (scriptURL) loadViaScript();
+        }
+      } else {
+        if (scriptURL) loadViaScript();
+        else showSync('error', 'CSV empty');
+      }
+    })
+    .catch(function(e) {
+      diag('CSV fetch failed: ' + e.message);
+      if (scriptURL) loadViaScript();
+      else showSync('error', 'Cannot load CSV');
+    });
+}
+
 
 function loadViaScript() {
   showSync('loading', 'Loading via script...');
@@ -446,7 +543,15 @@ function skipSetup() { document.getElementById('setup-overlay').style.display = 
 function showSettings() {
   document.getElementById('setup-script-url').value = scriptURL;
   document.getElementById('setup-csv-url').value = csvURL;
-  document.getElementById('setup-status').textContent = '';
+  var updated = localStorage.getItem('cogasoc_members_updated');
+  var source = localStorage.getItem('cogasoc_members_source');
+  var statusEl = document.getElementById('setup-status');
+  if (members.length > 0 && updated) {
+    statusEl.textContent = members.length + ' members on device (' + source + ') - last updated ' + updated;
+  } else {
+    statusEl.textContent = 'No members loaded yet';
+  }
+  document.getElementById('upload-status').textContent = '';
   document.getElementById('setup-overlay').style.display = 'flex';
 }
 
@@ -715,6 +820,7 @@ function playSound(type) {
     }
   } catch(e) {}
 }
+
 </script>
 </body>
 </html>
