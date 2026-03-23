@@ -499,11 +499,11 @@ async function checkInGuest(guestId, guestName, days) {
   // TEST MODE — simulate result without writing anything
   if (isTest) {
     const fakeName = guestName || lookupLocalName(guestId) || guestId;
-    // Randomly simulate outcomes for training realism
+    // Simulate all outcomes for training — full real experience
     const outcomes = ['ok','ok','ok','already','denied'];
     const pick = outcomes[Math.floor(Math.random()*outcomes.length)];
-    const msgs = {ok:'TEST ✓ Would approve', already:'TEST ⚠ Would flag as already used', denied:'TEST ✕ Would deny (not on plan)'};
-    showResult(pick, '[TEST] ' + fakeName, guestId, msgs[pick]);
+    const msgs = {ok:'Test scan — would approve', already:'Test scan — would flag duplicate', denied:'Test scan — would deny'};
+    showResult(pick, fakeName, guestId, msgs[pick]);
     flash(pick === 'ok' ? 'green' : pick === 'already' ? 'amber' : 'red');
     logScan(pick, '[TEST] ' + fakeName, guestId);
     return;
@@ -600,6 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── UI ─────────────────────────────────────────────────────────────────
 function showResult(type, name, id, detail) {
+  playSound(type);
   const card = document.getElementById('result-card');
   card.className = 'result-card ' + type;
 
@@ -634,6 +635,49 @@ function showResult(type, name, id, detail) {
 
 function dismissPopup() {
   document.getElementById('scan-popup').classList.remove('show');
+}
+
+function playSound(type) {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    if (type === 'ok') {
+      // Two ascending tones - success
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.setValueAtTime(780, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } else if (type === 'already') {
+      // Mid double beep - warning
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+      var osc2 = ctx.createOscillator();
+      var gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.frequency.setValueAtTime(440, ctx.currentTime + 0.2);
+      gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc2.start(ctx.currentTime + 0.2);
+      osc2.stop(ctx.currentTime + 0.35);
+    } else if (type === 'denied') {
+      // Low descending tone - denied
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.setValueAtTime(180, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.45);
+    }
+  } catch(e) { console.warn('Audio not available'); }
 }
 
 function flash(color) {
