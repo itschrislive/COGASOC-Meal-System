@@ -165,6 +165,13 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
 <div class="panel active" id="panel-onsite">
   <div class="section-title">On-Site Registration</div>
   <div class="section-desc">New member registering in person. Fill out their info, collect payment, print their card on the spot.</div>
+  <div style="background:var(--navy-pale);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:5px;">Member ID <span style="color:var(--muted);font-weight:400;text-transform:none;">(from your main list, or leave blank to auto-generate)</span></label>
+      <input type="text" id="custom-id" placeholder="e.g. PS12345 or leave blank" style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;background:#fff;" oninput="lookupExistingMember(this.value)">
+    </div>
+    <div id="existing-member-hint" style="display:none;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;"></div>
+  </div>
   <div class="form-grid">
     <div class="form-group"><label>First Name *</label><input type="text" id="fname" placeholder="Sarah" autocomplete="given-name"></div>
     <div class="form-group"><label>Last Name *</label><input type="text" id="lname" placeholder="Cohen" autocomplete="family-name"></div>
@@ -351,6 +358,11 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
 
 <!-- PRINT --><!-- PRINT -->
 <div class="panel" id="panel-print">
+  <div id="reprint-bar" style="display:none;background:var(--navy-pale);border:1.5px solid var(--navy3);border-radius:10px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:700;color:var(--navy);">Reprint card for <span id="reprint-bar-name"></span>?</span>
+    <button onclick="var b=document.getElementById('reprint-bar');reprintSingle(b._member);b.style.display='none';" class="btn-primary" style="font-size:12px;padding:7px 16px;">Print</button>
+    <button onclick="document.getElementById('reprint-bar').style.display='none';" class="btn-secondary" style="font-size:12px;padding:7px 14px;">Cancel</button>
+  </div>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
     <div><div class="section-title">Print Cards</div><div class="section-desc" style="margin-bottom:0;">Credit card size (3.375" x 2.125") — click any card to reprint individually</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -614,7 +626,14 @@ function registerOnsite() {
   var ln=document.getElementById('lname').value.trim();
   if(!fn||!ln){ showToast('Please enter first and last name.'); return; }
   if(!selPayment){ showToast('Please select a payment type.'); return; }
-  var id=generateID();
+  var customId = document.getElementById('custom-id').value.trim().toUpperCase();
+  var id = customId || generateID();
+  // Check for duplicate
+  if (members.find(function(m){ return m.id === id; }) && customId) {
+    showToast('That ID already exists. Opening their profile.');
+    openMemberModal(id);
+    return;
+  }
   var m={
     id:id,firstName:fn,lastName:ln,
     email:document.getElementById('email').value.trim(),
@@ -638,6 +657,8 @@ function registerOnsite() {
 function clearForm() {
   ['fname','lname','email','phone','notes','balance-amount'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('tabernacle').value='';
+  document.getElementById('custom-id').value='';
+  document.getElementById('existing-member-hint').style.display='none';
   document.getElementById('agegroup').value='';
   document.getElementById('balance-field').style.display='none';
   document.getElementById('card-result').style.display='none';
@@ -686,7 +707,7 @@ function renderCheckin() {
     var isIn=m.checkinStatus==='checkedin';
     var hasBalance=m.paymentType==='balance';
     return '<tr>'
-      +'<td><strong>'+m.firstName+' '+m.lastName+'</strong></td>'
+      +'<td>'+makeNameClickable(m.id, '<strong>'+m.firstName+' '+m.lastName+'</strong>')+'</td>'
       +'<td><span class="bid">'+m.id+'</span></td>'
       +'<td>'+(m.tabernacle||'--')+'</td>'
       +'<td>'+(AGE[m.ageGroup]||'--')+'</td>'
@@ -769,7 +790,7 @@ function renderMembers() {
   empty.style.display='none';
   tbody.innerHTML=filtered.map(function(m){
     return '<tr>'
-      +'<td><strong>'+m.firstName+' '+m.lastName+'</strong></td>'
+      +'<td>'+makeNameClickable(m.id, '<strong>'+m.firstName+' '+m.lastName+'</strong>')+'</td>'
       +'<td><span class="bid">'+m.id+'</span></td>'
       +'<td>'+(m.tabernacle||'--')+'</td>'
       +'<td>'+(AGE[m.ageGroup]||'--')+'</td>'
@@ -833,7 +854,7 @@ function renderAdminTable() {
     var bUsed=m['B_'+day]==='USED';
     var lUsed=m['L_'+day]==='USED';
     return '<tr>'
-      +'<td><strong>'+m.firstName+' '+m.lastName+'</strong></td>'
+      +'<td>'+makeNameClickable(m.id, '<strong>'+m.firstName+' '+m.lastName+'</strong>')+'</td>'
       +'<td><span class="bid">'+m.id+'</span></td>'
       +'<td>'+(m.tabernacle||'--')+'</td>'
       +'<td><span class="tag '+( m.paymentType==='balance'?'tag-balance':'tag-paid')+'">'+( PAY[m.paymentType]||'--')+'</span></td>'
@@ -869,7 +890,7 @@ function renderBadgesInGrid(list,gridId){
     wrap.title='Click to reprint '+m.firstName+' '+m.lastName;
     wrap.innerHTML=makeBadge(m);
     if(gridId==='all-print-grid'){
-      wrap.onclick=function(){ reprintSingle(m); };
+      wrap.onclick=function(){ openReprintConfirm(m); };
       wrap.onmouseenter=function(){ this.style.transform='scale(1.03)'; this.style.boxShadow='0 8px 24px rgba(27,46,75,0.2)'; };
       wrap.onmouseleave=function(){ this.style.transform='scale(1)'; this.style.boxShadow='none'; };
     }
@@ -882,8 +903,15 @@ function renderBadgesInGrid(list,gridId){
   });
 }
 
+function openReprintConfirm(m) {
+  var bar = document.getElementById('reprint-bar');
+  if (!bar) return reprintSingle(m);
+  document.getElementById('reprint-bar-name').textContent = m.firstName + ' ' + m.lastName;
+  bar.style.display = 'flex';
+  bar._member = m;
+}
+
 function reprintSingle(m){
-  if(!confirm('Reprint card for '+m.firstName+' '+m.lastName+'?'))return;
   var tempDiv=document.createElement('div');
   tempDiv.innerHTML=makeBadge(m);
   document.body.appendChild(tempDiv);
@@ -895,7 +923,8 @@ function reprintSingle(m){
   }
   setTimeout(function(){
     var w=window.open('','_blank','width=420,height=340');
-    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:0;}body{width:3.375in;height:2.125in;overflow:hidden;padding:0;}}</style></head><body>'+badgeEl.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
+    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:0;}body{width:3.375in;height:2.125in;overflow:hidden;padding:0;}}</style></head><body>'+badgeEl.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt>
+</body></html>');
     w.document.close();
     document.body.removeChild(tempDiv);
   },200);
@@ -941,7 +970,9 @@ function getCardCSS(){
 function printSingleBadge(){
   var badge=document.getElementById('preview-badge');
   var w=window.open('','_blank','width=420,height=340');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:0;}}body{width:3.375in;height:2.125in;overflow:hidden;padding:0;}</style></head><body>'+badge.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:0;}}body{width:3.375in;height:2.125in;overflow:hidden;padding:0;}</style></head><body>'+badge.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt>
+
+</body></html>');
   w.document.close();
 }
 
@@ -949,7 +980,9 @@ function printGridBadges(gridId){
   var grid=document.getElementById(gridId);
   if(!grid||!grid.children.length){showToast('No cards to print.');return;}
   var w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:6mm;}}</style></head><body><div class="grid">'+grid.innerHTML+'</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},700);}<'+'/scr'+'ipt></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}@media print{@page{size:letter;margin:6mm;}}</style></head><body><div class="grid">'+grid.innerHTML+'</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},700);}<'+'/scr'+'ipt>
+
+</body></html>');
   w.document.close();
 }
 
@@ -1028,7 +1061,258 @@ function exportCSV(){
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
+
+/* -- MEMBER PROFILE MODAL -- */
+var mmCurrentId = '';
+
+function openMemberModal(id) {
+  var m = members.find(function(x){ return x.id === id; });
+  if (!m) { showToast('Member not found.'); return; }
+  mmCurrentId = id;
+  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
+  document.getElementById('mm-id').textContent = 'ID: ' + m.id;
+  mmTab('details');
+  mmLoadDetails(m);
+  var modal = document.getElementById('member-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMemberModal() {
+  document.getElementById('member-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  mmCurrentId = '';
+}
+
+function mmTab(tab) {
+  ['details','edit','meals'].forEach(function(t) {
+    document.getElementById('mm-' + t).style.display = t === tab ? 'block' : 'none';
+    var btn = document.getElementById('mm-tab-' + t);
+    if (btn) {
+      btn.style.color = t === tab ? 'var(--navy)' : 'var(--muted)';
+      btn.style.borderBottom = t === tab ? '2px solid var(--gold)' : '2px solid transparent';
+    }
+  });
+  if (tab === 'edit') mmLoadEdit();
+  if (tab === 'meals') mmLoadMeals();
+}
+
+function mmLoadDetails(m) {
+  var hasBalance = m.paymentType === 'balance';
+  var warn = document.getElementById('mm-balance-warn');
+  if (hasBalance) {
+    warn.style.display = 'block';
+    warn.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified');
+  } else {
+    warn.style.display = 'none';
+  }
+  document.getElementById('mm-tab-val').textContent = m.tabernacle || '--';
+  document.getElementById('mm-age').textContent = AGE[m.ageGroup] || '--';
+  document.getElementById('mm-pay').innerHTML = '<span class="tag ' + (hasBalance ? 'tag-balance' : 'tag-paid') + '">' + (PAY[m.paymentType] || '--') + '</span>';
+  document.getElementById('mm-ci').innerHTML = '<span class="tag ' + (m.checkinStatus === 'checkedin' ? 'tag-in' : 'tag-pending') + '">' + (m.checkinStatus === 'checkedin' ? 'Checked In' : 'Pending') + '</span>';
+  document.getElementById('mm-email').textContent = m.email || '--';
+  document.getElementById('mm-phone').textContent = m.phone || '--';
+  document.getElementById('mm-reg').textContent = m.registeredAt ? new Date(m.registeredAt).toLocaleDateString() : '--';
+  document.getElementById('mm-notes').textContent = m.notes || '--';
+  var ciBtn = document.getElementById('mm-checkin-btn');
+  if (m.checkinStatus === 'checkedin') {
+    ciBtn.textContent = 'Already Checked In';
+    ciBtn.disabled = true;
+    ciBtn.style.opacity = '0.5';
+  } else if (hasBalance) {
+    ciBtn.textContent = 'Has Balance - Check In Anyway?';
+    ciBtn.disabled = false;
+    ciBtn.style.opacity = '1';
+    ciBtn.style.background = '#92400E';
+  } else {
+    ciBtn.textContent = 'Check In + Hand Over Package';
+    ciBtn.disabled = false;
+    ciBtn.style.opacity = '1';
+    ciBtn.style.background = '';
+  }
+}
+
+function mmCheckIn() {
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (!m) return;
+  m.checkinStatus = 'checkedin';
+  syncWrite({action:'checkin', guestId: mmCurrentId});
+  mmLoadDetails(m);
+  renderCheckin();
+  renderMembers();
+  showToast(m.firstName + ' checked in!');
+}
+
+function mmReprint() {
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (!m) return;
+  var box = document.getElementById('mm-reprint-confirm');
+  document.getElementById('mm-reprint-name').textContent = m.firstName + ' ' + m.lastName;
+  box.style.display = 'flex';
+}
+
+function mmReprintConfirm() {
+  document.getElementById('mm-reprint-confirm').style.display = 'none';
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (m) reprintSingle(m);
+}
+
+function mmLoadEdit() {
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (!m) return;
+  document.getElementById('mm-edit-fn').value = m.firstName || '';
+  document.getElementById('mm-edit-ln').value = m.lastName || '';
+  document.getElementById('mm-edit-email').value = m.email || '';
+  document.getElementById('mm-edit-phone').value = m.phone || '';
+  document.getElementById('mm-edit-pay').value = m.paymentType || 'full';
+  document.getElementById('mm-edit-bal').value = m.balanceNotes || '';
+  document.getElementById('mm-edit-notes').value = m.notes || '';
+  document.getElementById('mm-edit-status').textContent = '';
+}
+
+function mmSaveEdit() {
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (!m) return;
+  m.firstName = document.getElementById('mm-edit-fn').value.trim();
+  m.lastName = document.getElementById('mm-edit-ln').value.trim();
+  m.email = document.getElementById('mm-edit-email').value.trim();
+  m.phone = document.getElementById('mm-edit-phone').value.trim();
+  m.paymentType = document.getElementById('mm-edit-pay').value;
+  m.balanceNotes = document.getElementById('mm-edit-bal').value.trim();
+  m.notes = document.getElementById('mm-edit-notes').value.trim();
+  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
+  document.getElementById('mm-edit-status').textContent = 'Saved!';
+  setTimeout(function(){ document.getElementById('mm-edit-status').textContent = ''; }, 2000);
+  renderMembers();
+  renderCheckin();
+  showToast('Changes saved for ' + m.firstName);
+}
+
+function mmLoadMeals() {
+  var m = members.find(function(x){ return x.id === mmCurrentId; });
+  if (!m) return;
+  var DAYS_LIST = ['Mar31','Apr1','Apr2','Apr3','Apr4','Apr5','Apr6','Apr7','Apr8'];
+  var DAY_LABELS = {'Mar31':'Mar 31','Apr1':'Apr 1','Apr2':'Apr 2','Apr3':'Apr 3','Apr4':'Apr 4','Apr5':'Apr 5','Apr6':'Apr 6','Apr7':'Apr 7','Apr8':'Apr 8'};
+  var grid = document.getElementById('mm-meal-grid');
+  grid.innerHTML = DAYS_LIST.map(function(day) {
+    var b = m['B_' + day] === 'USED';
+    var l = m['L_' + day] === 'USED';
+    return '<div style="background:var(--off);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'
+      + '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;">' + DAY_LABELS[day] + '</div>'
+      + '<div style="font-size:11px;margin-bottom:4px;"><span style="background:' + (b ? 'var(--green-bg)' : 'var(--border)') + ';color:' + (b ? 'var(--green)' : 'var(--muted)') + ';padding:2px 8px;border-radius:10px;font-weight:700;">Breakfast</span></div>'
+      + '<div style="font-size:11px;"><span style="background:' + (l ? 'var(--green-bg)' : 'var(--border)') + ';color:' + (l ? 'var(--green)' : 'var(--muted)') + ';padding:2px 8px;border-radius:10px;font-weight:700;">Lunch</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function lookupExistingMember(val) {
+  val = val.trim().toUpperCase();
+  var hint = document.getElementById('existing-member-hint');
+  if (!val || val.length < 4) { hint.style.display = 'none'; return; }
+  var m = members.find(function(x){ return x.id === val; });
+  if (m) {
+    hint.style.display = 'block';
+    hint.style.background = 'var(--amber-bg)';
+    hint.style.color = 'var(--amber)';
+    hint.style.border = '1px solid rgba(146,64,14,0.2)';
+    hint.textContent = 'Found: ' + m.firstName + ' ' + m.lastName + ' (' + m.tabernacle + ') - already registered';
+    document.getElementById('fname').value = m.firstName;
+    document.getElementById('lname').value = m.lastName;
+    document.getElementById('email').value = m.email || '';
+    document.getElementById('phone').value = m.phone || '';
+    document.getElementById('tabernacle').value = m.tabernacle || '';
+    document.getElementById('agegroup').value = m.ageGroup || '';
+  } else if (val.length >= 6) {
+    hint.style.display = 'block';
+    hint.style.background = 'var(--green-bg)';
+    hint.style.color = 'var(--green)';
+    hint.style.border = '1px solid rgba(22,163,74,0.2)';
+    hint.textContent = 'New ID: ' + val + ' - will be created';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+/* -- CLICK-TO-OPEN in tables -- */
+function makeNameClickable(id, name) {
+  return '<span class="clickable-name" data-mid="' + id + '" style="cursor:pointer;color:var(--navy2);text-decoration:underline;text-decoration-style:dotted;">' + name + '</span>';
+}
+
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
 </script>
+
+
+
+
+
+
+<!-- MEMBER PROFILE MODAL -->
+<div id="member-modal" style="display:none;position:fixed;inset:0;background:rgba(27,46,75,0.6);z-index:800;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(27,46,75,0.3);">
+    <!-- Modal Header -->
+    <div style="background:var(--navy);padding:20px 24px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div id="mm-name" style="font-family:'Cormorant Garamond',serif;color:#fff;font-size:26px;font-weight:600;"></div>
+        <div id="mm-id" style="font-family:monospace;font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeMemberModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">x</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--off);">
+      <button class="mm-tab active" onclick="mmTab('details')" id="mm-tab-details" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--navy);border-bottom:2px solid var(--gold);">Details</button>
+      <button class="mm-tab" onclick="mmTab('edit')" id="mm-tab-edit" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;">Edit</button>
+      <button class="mm-tab" onclick="mmTab('meals')" id="mm-tab-meals" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;">Meal History</button>
+    </div>
+    <!-- Details Panel -->
+    <div id="mm-details" style="padding:20px 24px;">
+      <div id="mm-balance-warn" style="display:none;background:var(--red-bg);border:1px solid rgba(153,27,27,0.2);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--red);margin-bottom:14px;"></div>
+      <table style="width:100%;font-size:13px;">
+        <tr><td style="padding:7px 0;color:var(--muted);width:130px;font-weight:600;">Tabernacle</td><td id="mm-tab-val" style="font-weight:700;color:var(--navy);"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Age Group</td><td id="mm-age" style="font-weight:700;color:var(--navy);"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Payment</td><td id="mm-pay"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Check-in</td><td id="mm-ci"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Email</td><td id="mm-email" style="font-size:12px;"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Phone</td><td id="mm-phone" style="font-size:12px;"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Registered</td><td id="mm-reg" style="font-size:12px;color:var(--muted);"></td></tr>
+        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Notes</td><td id="mm-notes" style="font-size:12px;color:var(--muted);"></td></tr>
+      </table>
+      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+        <button id="mm-checkin-btn" onclick="mmCheckIn()" class="btn-green" style="font-size:13px;padding:9px 18px;">Check In</button>
+        <button onclick="mmReprint()" class="btn-secondary" style="font-size:13px;padding:9px 18px;">Reprint Card</button>
+        <div id="mm-reprint-confirm" style="display:none;background:var(--navy-pale);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--navy);display:none;align-items:center;gap:8px;">
+          Print card for <span id="mm-reprint-name"></span>?
+          <button onclick="mmReprintConfirm()" style="background:var(--navy);color:#fff;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;">Print</button>
+          <button onclick="document.getElementById('mm-reprint-confirm').style.display='none';" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;">x</button>
+        </div>
+      </div>
+    </div>
+    <!-- Edit Panel -->
+    <div id="mm-edit" style="display:none;padding:20px 24px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">First Name</label><input id="mm-edit-fn" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Last Name</label><input id="mm-edit-ln" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Email</label><input id="mm-edit-email" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Phone</label><input id="mm-edit-phone" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Payment Type</label>
+          <select id="mm-edit-pay" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;">
+            <option value="full">Paid in Full</option><option value="balance">Balance Due</option>
+          </select>
+        </div>
+        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Balance Notes</label><input id="mm-edit-bal" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+        <div style="grid-column:1/-1;"><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Notes</label><input id="mm-edit-notes" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button onclick="mmSaveEdit()" class="btn-primary" style="font-size:13px;padding:9px 20px;">Save Changes</button>
+        <button onclick="mmTab('details')" class="btn-secondary" style="font-size:13px;padding:9px 16px;">Cancel</button>
+        <span id="mm-edit-status" style="font-size:12px;color:var(--green);font-weight:700;line-height:2.2;"></span>
+      </div>
+    </div>
+    <!-- Meal History Panel -->
+    <div id="mm-meals" style="display:none;padding:20px 24px;">
+      <div id="mm-meal-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
