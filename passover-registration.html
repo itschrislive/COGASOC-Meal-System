@@ -155,7 +155,7 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
   <div class="tab" onclick="switchTab('checkin')">Check In</div>
   <div class="tab" onclick="switchTab('members')">Member List</div>
   <div class="tab" onclick="switchTab('admin')">Admin Dashboard</div>
-  <div class="tab" onclick="switchTab('import')">Bulk Import</div>
+  
   <div class="tab" onclick="switchTab('print')">Print Cards</div>
   <div class="tab" onclick="switchTab('setup')">Setup</div>
 </div>
@@ -348,37 +348,21 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
   </div>
 </div>
 
-<!-- BULK IMPORT -->
-<div class="panel" id="panel-import">
-  <div class="section-title">Bulk Import</div>
-  <div class="section-desc">Paste your pre-registered list. Format: FirstName, LastName, Email, Phone, Tabernacle — one per line. All imported as Paid in Full, pending check-in.</div>
-  <textarea id="import-text" placeholder="Sarah Cohen&#10;David,Levy,Brooklyn&#10;Rachel,Goldstein,rachel@email.com,555-1234,Atlanta" style="width:100%;height:180px;padding:13px;border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;resize:vertical;outline:none;background:var(--white);color:var(--text);line-height:1.7;margin-bottom:14px;"></textarea>
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
-    <button class="btn-primary" onclick="runBulkImport()">Import &amp; Generate Cards</button>
-    <button class="btn-secondary" onclick="document.getElementById('import-text').value=''">Clear</button>
-    <span id="import-status" style="font-size:13px;color:var(--navy3);font-weight:700;"></span>
-  </div>
-  <div id="import-preview" style="display:none;">
-    <div class="divider"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div class="section-title" style="margin-bottom:0;"><span id="import-count">0</span> cards ready</div>
-      <button class="btn-gold" onclick="printGridBadges('import-grid')">Print All</button>
-    </div>
-    <div id="import-grid" class="print-grid"></div>
-  </div>
-</div>
-
-<!-- PRINT -->
+<!-- PRINT --><!-- PRINT -->
 <div class="panel" id="panel-print">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
-    <div><div class="section-title">Print All Cards</div><div class="section-desc" style="margin-bottom:0;">Credit card size (3.375" x 2.125") — 3 per row, laminate ready</div></div>
-    <div style="display:flex;gap:10px;">
+    <div><div class="section-title">Print Cards</div><div class="section-desc" style="margin-bottom:0;">Credit card size (3.375" x 2.125") — click any card to reprint individually</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input class="search-bar" type="text" id="print-search" placeholder="Search to reprint..." oninput="filterPrintGrid()" style="width:220px;">
       <button class="btn-secondary" onclick="generateAllBadges()">Refresh</button>
       <button class="btn-gold" onclick="printGridBadges('all-print-grid')">Print All</button>
     </div>
   </div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+    <span id="print-count">0</span> cards shown &nbsp;&middot;&nbsp; Click any card to reprint it
+  </div>
   <div id="all-print-grid" class="print-grid"></div>
-  <div id="no-print" style="display:none;text-align:center;padding:60px;color:var(--muted);">Register members to generate cards.</div>
+  <div id="no-print" style="display:none;text-align:center;padding:60px;color:var(--muted);">Register members or connect your sheet to generate cards.</div>
 </div>
 
 <!-- SETUP -->
@@ -477,7 +461,7 @@ function R(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeT
 <div class="toast" id="toast"></div>
 
 <script>
-var TABS_LIST = ['onsite','checkin','members','admin','import','print','setup'];
+var TABS_LIST = ['onsite','checkin','members','admin','print','setup'];
 var TABERNACLES = ['Anchorage','Alexandria','Atlanta','Atlantic City','Baltimore','Belleville','Boston','Brooklyn','Charlotte','Chicago','Cincinnati','Cleveland','Detroit','Greensboro','Harrisburg','Hartford','Jacksonville','Los Angeles','Miami','Mt. Vernon','Newark - Plainfield','Philadelphia','Providence','Richmond','Roanoke','Rochester','Salisbury','Southern Pines','Washington','Wilmington','Zanesville'];
 var DAYS = [{key:'Mar31',label:'Mar 31'},{key:'Apr1',label:'Apr 1'},{key:'Apr2',label:'Apr 2'},{key:'Apr3',label:'Apr 3'},{key:'Apr4',label:'Apr 4'},{key:'Apr5',label:'Apr 5'},{key:'Apr6',label:'Apr 6'},{key:'Apr7',label:'Apr 7'},{key:'Apr8',label:'Apr 8'}];
 var PAY = {full:'Paid in Full',balance:'Balance Due','':'--'};
@@ -506,7 +490,7 @@ function switchTab(tab) {
   if(tab==='members') loadFromSheet(renderMembers);
   if(tab==='checkin') loadFromSheet(renderCheckin);
   if(tab==='admin') loadFromSheet(renderAdmin);
-  if(tab==='print') generateAllBadges();
+  if(tab==='print'){ loadFromSheet(function(){ generateAllBadges(); }); }
 }
 
 function manualRefresh() {
@@ -728,7 +712,7 @@ function openCheckinCard(id) {
     +'<div class="ci-footer">'
     +'<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button>'
     +(hasBalance
-      ?'<span style="font-size:13px;color:var(--red);font-weight:700;">&#8594; Collect balance first, then check in</span><button class="btn-green" onclick="confirmCheckin(\''+id+'\')">Confirm Check In</button>'
+      ?'<button class="btn-primary" style="background:#B91C1C;" onclick="sendToRegistration()'>&#8594; Send to Registration Desk</button>'
       :'<button class="btn-green" onclick="confirmCheckin(\''+id+'\')">&#10003; Confirm Check In &amp; Hand Over Package</button>'
     )
     +'</div></div>';
@@ -738,6 +722,11 @@ function openCheckinCard(id) {
 }
 
 function closeCheckinCard() { document.getElementById('ci-member-card').style.display='none'; }
+
+function sendToRegistration() {
+  closeCheckinCard();
+  showToast('Member has a balance due — direct to On-Site Registration desk.');
+}
 
 function confirmCheckin(id) {
   var m=members.find(function(x){return x.id===id;});
@@ -862,7 +851,14 @@ function renderBadgesInGrid(list,gridId){
   grid.innerHTML='';
   list.forEach(function(m){
     var wrap=document.createElement('div');
+    wrap.style.cssText='cursor:pointer;transition:transform 0.15s;';
+    wrap.title='Click to reprint '+m.firstName+' '+m.lastName;
     wrap.innerHTML=makeBadge(m);
+    if(gridId==='all-print-grid'){
+      wrap.onclick=function(){ reprintSingle(m); };
+      wrap.onmouseenter=function(){ this.style.transform='scale(1.03)'; this.style.boxShadow='0 8px 24px rgba(27,46,75,0.2)'; };
+      wrap.onmouseleave=function(){ this.style.transform='scale(1)'; this.style.boxShadow='none'; };
+    }
     grid.appendChild(wrap);
     setTimeout(function(){
       var el=document.getElementById('BQR-'+m.id);
@@ -872,11 +868,42 @@ function renderBadgesInGrid(list,gridId){
   });
 }
 
+function reprintSingle(m){
+  if(!confirm('Reprint card for '+m.firstName+' '+m.lastName+'?'))return;
+  var tempDiv=document.createElement('div');
+  tempDiv.innerHTML=makeBadge(m);
+  document.body.appendChild(tempDiv);
+  var badgeEl=tempDiv.querySelector('.id-card');
+  // Generate QR first then print
+  var qrEl=tempDiv.querySelector('.id-qr div');
+  if(qrEl){
+    new QRCode(qrEl,{text:JSON.stringify({id:m.id,name:m.firstName+' '+m.lastName,tab:m.tabernacle}),width:68,height:68,colorDark:'#1B2E4B',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.M});
+  }
+  setTimeout(function(){
+    var w=window.open('','_blank','width=420,height=340');
+    w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardCSS()+'<style>body{display:flex;justify-content:center;padding:10mm;}@media print{@page{size:3.375in 2.125in;margin:0;}body{width:3.375in;height:2.125in;overflow:hidden;padding:0;}}</style></head><body>'+badgeEl.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
+    w.document.close();
+    document.body.removeChild(tempDiv);
+  },200);
+}
+
 function generateAllBadges(){
   var no=document.getElementById('no-print');
   if(!members.length){document.getElementById('all-print-grid').innerHTML='';no.style.display='block';return;}
   no.style.display='none';
   renderBadgesInGrid(members,'all-print-grid');
+  var cnt=document.getElementById('print-count');
+  if(cnt) cnt.textContent=members.length;
+}
+
+function filterPrintGrid(){
+  var q=(document.getElementById('print-search').value||''). toLowerCase();
+  var filtered=q?members.filter(function(m){
+    return (m.firstName+' '+m.lastName+' '+m.id+' '+(m.tabernacle||'')).toLowerCase().includes(q);
+  }):members;
+  renderBadgesInGrid(filtered,'all-print-grid');
+  var cnt=document.getElementById('print-count');
+  if(cnt) cnt.textContent=filtered.length;
 }
 
 function getCardCSS(){
