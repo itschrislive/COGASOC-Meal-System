@@ -723,11 +723,14 @@ function openCheckinCard(id) {
   var cancelBtn = '<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button>';
   var actionBtn = hasBalance
     ? '<button class="btn-primary" style="background:#B91C1C;" onclick="sendToRegistration()">Send to Registration Desk</button>'
-    : '<button class="btn-green" onclick="confirmCheckin('' + id + '')">Confirm Check In + Hand Over Package</button>';
+    : '<button class="btn-green" id="ci-confirm-btn">Confirm Check In + Hand Over Package</button>';
 
   var footerHTML = '<div class="ci-footer">' + cancelBtn + actionBtn + '</div>';
 
   card.innerHTML = '<div class="ci-card">' + headHTML + warningHTML + bodyHTML + footerHTML + '</div>';
+  card.style.display = 'block';
+  var confirmBtn = document.getElementById('ci-confirm-btn');
+  if (confirmBtn) { confirmBtn.onclick = function() { confirmCheckin(id); }; }
   card.style.display = 'block';
   card.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
