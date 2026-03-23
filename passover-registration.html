@@ -2,632 +2,397 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COGASOC Registration Portal</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>COGASOC — Meal Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --navy:#1B2E4B; --navy2:#2A4570; --navy3:#3D6494; --navy-pale:#EBF0F7;
   --gold:#C9991A; --gold2:#E8B830; --gold-pale:#FDF6E3;
   --brown:#7A5C3A; --brown2:#A8835A;
   --white:#FFFFFF; --off:#F8F6F2; --text:#1A1A2E; --mid:#4A4A6A; --muted:#8A8AAA;
-  --border:rgba(27,46,75,0.12); --shadow:0 2px 16px rgba(27,46,75,0.10);
+  --border:rgba(27,46,75,0.12);
   --green:#166534; --green-bg:#DCFCE7; --green2:#16A34A;
-  --red:#991B1B; --red-bg:#FEF2F2; --amber:#92400E; --amber-bg:#FFFBEB;
+  --red:#991B1B; --red-bg:#FEF2F2; --red2:#DC2626;
+  --amber:#92400E; --amber-bg:#FFFBEB; --amber2:#D97706;
 }
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Nunito',sans-serif; background:var(--off); color:var(--text); min-height:100vh; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 
-.header { background:var(--navy); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--gold); box-shadow:0 2px 20px rgba(27,46,75,0.3); }
-.header-title { font-family:'Cormorant Garamond',serif; color:#fff; font-size:22px; font-weight:600; }
-.hbtn { padding:8px 16px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; cursor:pointer; border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.9); transition:all 0.2s; }
-.hbtn:hover { background:rgba(255,255,255,0.2); }
+.header{background:var(--navy);padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold);}
+.header-brand{padding:12px 0;}
+.header-title{font-family:'Cormorant Garamond',serif;color:#fff;font-size:18px;font-weight:600;}
+.header-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.meal-selector{display:flex;gap:5px;}
+.meal-btn{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.meal-btn.active{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+.meal-btn.test-active{background:#4338CA;color:#C7D2FE;border-color:#6366F1;}
 
-.tabs { background:var(--white); border-bottom:1px solid var(--border); display:flex; padding:0 28px; overflow-x:auto; scrollbar-width:none; box-shadow:0 1px 4px rgba(27,46,75,0.06); }
-.tabs::-webkit-scrollbar { display:none; }
-.tab { padding:13px 18px; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; white-space:nowrap; }
-.tab:hover:not(.active) { color:var(--navy2); }
-.tab.active { color:var(--navy); border-bottom-color:var(--gold); }
+.sync-bar{padding:6px 18px;font-size:12px;font-weight:700;text-align:center;display:none;}
+.sync-bar.show{display:block;}
+.sync-bar.loading{background:#EEF2FF;color:#4338CA;}
+.sync-bar.ok{background:var(--green-bg);color:var(--green);}
+.sync-bar.error{background:var(--red-bg);color:var(--red);}
 
-.panel { display:none; padding:28px; max-width:980px; margin:0 auto; }
-.panel.active { display:block; }
+.test-banner{display:none;background:#EEF2FF;border-bottom:2px solid #6366F1;padding:6px 18px;font-size:12px;font-weight:700;color:#4338CA;text-align:center;}
+.test-banner.show{display:block;}
 
-.section-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; color:var(--navy); margin-bottom:4px; }
-.section-desc { font-size:13px; color:var(--mid); margin-bottom:22px; line-height:1.6; }
+.day-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 16px;overflow-x:auto;display:flex;gap:7px;scrollbar-width:none;}
+.day-bar::-webkit-scrollbar{display:none;}
+.day-chip{white-space:nowrap;padding:5px 12px;border-radius:14px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.day-chip.active{background:var(--navy-pale);border-color:var(--navy3);color:var(--navy2);}
 
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.form-group { display:flex; flex-direction:column; gap:5px; }
-.form-group.full { grid-column:1/-1; }
-label { font-size:11px; font-weight:700; color:var(--brown); text-transform:uppercase; letter-spacing:0.07em; }
-input, select { padding:10px 13px; border:1.5px solid var(--border); border-radius:8px; background:var(--white); font-family:'Nunito',sans-serif; font-size:14px; color:var(--text); transition:border-color 0.2s; outline:none; }
-input:focus, select:focus { border-color:var(--navy3); box-shadow:0 0 0 3px rgba(61,100,148,0.12); }
+.main{padding:16px;max-width:480px;margin:0 auto;}
 
-.pill-group { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
-.pill { padding:8px 18px; border-radius:20px; font-size:13px; font-weight:700; border:2px solid var(--border); background:var(--white); color:var(--mid); cursor:pointer; transition:all 0.2s; user-select:none; }
-.pill:hover { border-color:var(--navy3); color:var(--navy); }
-.pill.sel-full { background:var(--green); border-color:var(--green); color:#fff; }
-.pill.sel-balance { background:#92400E; border-color:#92400E; color:#fff; }
+.stats-bar{display:flex;gap:10px;margin-bottom:14px;}
+.stat-box{flex:1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center;}
+.stat-num{font-size:22px;font-weight:700;color:var(--navy);font-family:'Cormorant Garamond',serif;}
+.stat-label{font-size:9px;color:var(--brown2);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;font-weight:700;}
 
-.btn-primary { background:var(--navy); color:#fff; border:none; padding:11px 26px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
-.btn-primary:hover { background:var(--navy2); transform:translateY(-1px); }
-.btn-secondary { background:var(--white); color:var(--navy); border:1.5px solid var(--border); padding:10px 20px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
-.btn-secondary:hover { border-color:var(--navy3); }
-.btn-gold { background:var(--gold); color:var(--navy); border:none; padding:11px 24px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
-.btn-gold:hover { background:var(--gold2); }
-.btn-green { background:var(--green); color:#fff; border:none; padding:10px 22px; border-radius:8px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
-.btn-green:hover { background:#14532D; }
-.btn-danger { background:var(--white); color:#B91C1C; border:1.5px solid rgba(185,28,28,0.2); padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; }
-.actions { display:flex; gap:10px; margin-top:22px; align-items:center; flex-wrap:wrap; }
-.divider { height:1px; background:var(--border); margin:24px 0; }
+.result-card{border-radius:12px;padding:16px;margin-bottom:14px;display:none;border:2px solid transparent;}
+.result-card.ok{background:var(--green-bg);border-color:rgba(22,163,74,0.3);display:block;}
+.result-card.already{background:var(--amber-bg);border-color:rgba(217,119,6,0.3);display:block;}
+.result-card.denied{background:var(--red-bg);border-color:rgba(220,38,38,0.3);display:block;}
+.result-status{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.status-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;font-weight:700;}
+.ok .status-icon{background:rgba(22,163,74,0.15);color:var(--green2);}
+.already .status-icon{background:rgba(217,119,6,0.15);color:var(--amber2);}
+.denied .status-icon{background:rgba(220,38,38,0.15);color:var(--red2);}
+.status-label{font-size:18px;font-weight:700;}
+.ok .status-label{color:var(--green);}
+.already .status-label{color:var(--amber);}
+.denied .status-label{color:var(--red);}
+.result-name{font-size:20px;font-family:'Cormorant Garamond',serif;color:var(--navy);font-weight:700;margin-bottom:3px;}
+.result-detail{font-size:12px;color:var(--mid);}
+.result-meta{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.07);display:flex;gap:8px;}
+.meta-box{flex:1;background:rgba(255,255,255,0.7);border-radius:7px;padding:8px;text-align:center;}
+.meta-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:700;}
+.meta-val{font-size:13px;font-weight:700;color:var(--navy);margin-top:2px;}
 
-/* ALERT BANNERS */
-.banner { border-radius:10px; padding:14px 18px; margin-bottom:16px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px; }
-.banner-red { background:var(--red-bg); border:1.5px solid rgba(153,27,27,0.25); color:var(--red); }
-.banner-green { background:var(--green-bg); border:1.5px solid rgba(22,163,74,0.25); color:var(--green); }
-.banner-amber { background:var(--amber-bg); border:1.5px solid rgba(146,64,14,0.25); color:var(--amber); }
+.scanner-wrap{width:100%;max-width:400px;height:300px;background:#0A0E18;border-radius:14px;overflow:hidden;border:2px solid var(--navy2);margin:0 auto 14px;position:relative;}
+#camera-video{width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0;}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;}
+.scan-frame{width:200px;height:200px;position:relative;}
+.scan-frame::before,.scan-frame::after,.scan-frame .cbr,.scan-frame .cbl{content:'';position:absolute;width:28px;height:28px;border-color:var(--gold2);border-style:solid;}
+.scan-frame::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+.scan-frame::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0;}
+.scan-frame .cbr{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.scan-frame .cbl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px;}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold2),transparent);animation:scanline 2s ease-in-out infinite;}
+@keyframes scanline{0%{top:8%;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:92%;opacity:0;}}
+.scanner-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;}
+.scanner-placeholder p{font-size:14px;font-weight:600;color:rgba(255,255,255,0.5);text-align:center;padding:20px;}
 
-/* ID CARD */
-.id-card { width:325px; height:205px; border-radius:12px; overflow:hidden; position:relative; font-family:'Nunito',sans-serif; box-shadow:0 4px 24px rgba(27,46,75,0.22); border:1px solid rgba(27,46,75,0.15); background:#fff; flex-shrink:0; }
-.id-top { background:var(--navy); height:70px; position:relative; display:flex; align-items:center; padding:0 16px; }
-.id-arc { position:absolute; bottom:-16px; left:0; right:0; height:32px; background:var(--navy); border-radius:0 0 50% 50%; z-index:1; }
-.id-gold-bar { height:4px; background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold)); position:absolute; bottom:0; left:0; right:0; }
-.id-org { z-index:2; }
-.id-org-name { font-family:'Cormorant Garamond',serif; color:var(--gold2); font-size:20px; font-weight:700; letter-spacing:0.05em; line-height:1; }
-.id-org-sub { font-size:9px; color:rgba(255,255,255,0.5); margin-top:3px; letter-spacing:0.1em; text-transform:uppercase; }
-.id-body { padding:24px 14px 10px; display:flex; gap:12px; align-items:center; }
-.id-qr { flex-shrink:0; background:var(--white); border:1.5px solid var(--navy-pale); border-radius:6px; padding:3px; }
-.id-info { flex:1; min-width:0; }
-.id-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; color:var(--navy); line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.id-id { font-size:9px; color:var(--brown2); font-family:monospace; margin-top:2px; font-weight:700; letter-spacing:0.05em; }
-.id-badges { display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
-.id-badge { background:var(--navy-pale); border-radius:5px; padding:3px 8px; font-size:8px; font-weight:700; color:var(--navy2); text-transform:uppercase; letter-spacing:0.05em; }
-.id-badge.gold { background:var(--gold-pale); color:var(--brown); }
-.id-footer { position:absolute; bottom:0; left:0; right:0; height:24px; background:var(--gold-pale); border-top:1px solid rgba(201,153,26,0.2); display:flex; align-items:center; justify-content:space-between; padding:0 12px; }
-.id-footer-txt { font-size:8px; color:var(--brown); font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
-.card-result-wrap { display:flex; gap:28px; flex-wrap:wrap; margin-top:8px; }
+.scan-popup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:600;pointer-events:none;opacity:0;transition:opacity 0.15s;}
+.scan-popup.show{opacity:1;pointer-events:auto;}
+.scan-popup-inner{border-radius:20px;padding:36px 44px;text-align:center;min-width:260px;max-width:320px;width:88vw;border:2px solid transparent;}
+.scan-popup.show .scan-popup-inner{animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+@keyframes popIn{0%{transform:scale(0.7);opacity:0;}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
+.scan-popup.ok .scan-popup-inner{background:var(--green-bg);border-color:rgba(22,163,74,0.4);}
+.scan-popup.already .scan-popup-inner{background:var(--amber-bg);border-color:rgba(217,119,6,0.4);}
+.scan-popup.denied .scan-popup-inner{background:var(--red-bg);border-color:rgba(220,38,38,0.4);}
+.popup-icon{font-size:60px;line-height:1;margin-bottom:10px;display:block;font-weight:700;}
+.ok .popup-icon{color:var(--green2);}
+.already .popup-icon{color:var(--amber2);}
+.denied .popup-icon{color:var(--red2);}
+.popup-status{font-size:26px;font-weight:800;letter-spacing:0.04em;margin-bottom:6px;}
+.ok .popup-status{color:var(--green);}
+.already .popup-status{color:var(--amber);}
+.denied .popup-status{color:var(--red);}
+.popup-name{font-size:18px;font-family:'Cormorant Garamond',serif;color:var(--navy);font-weight:700;margin-bottom:4px;}
+.popup-detail{font-size:12px;color:var(--mid);}
 
-/* TABLE */
-table { width:100%; border-collapse:collapse; }
-thead th { text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--brown2); padding:9px 12px; border-bottom:2px solid var(--gold-pale); }
-tbody tr { transition:background 0.1s; }
-tbody tr:hover { background:var(--navy-pale); }
-tbody td { padding:11px 12px; font-size:13px; border-bottom:1px solid var(--border); }
-.bid { font-family:monospace; font-size:11px; background:var(--navy-pale); color:var(--navy2); padding:2px 6px; border-radius:4px; font-weight:700; }
-.tag { display:inline-block; padding:3px 9px; border-radius:10px; font-size:11px; font-weight:700; }
-.tag-paid { background:#DCFCE7; color:#166534; }
-.tag-balance { background:#FEF3C7; color:#92400E; }
-.tag-in { background:#DCFCE7; color:#166534; }
-.tag-pending { background:#FEF3C7; color:#92400E; }
-.tag-picked { background:#EDE9FE; color:#5B21B6; }
+.flash{position:fixed;inset:0;pointer-events:none;z-index:500;opacity:0;transition:opacity 0.1s;}
+.flash.green{background:rgba(22,163,74,0.2);}
+.flash.red{background:rgba(220,38,38,0.2);}
+.flash.amber{background:rgba(217,119,6,0.15);}
+.flash.show{opacity:1;}
 
-.search-bar { padding:9px 13px 9px 34px; border:1.5px solid var(--border); border-radius:8px; font-family:'Nunito',sans-serif; font-size:13px; width:240px; background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='none' stroke='%238A8AAA' stroke-width='1.5' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 11px center; outline:none; }
-.search-bar:focus { border-color:var(--navy3); }
-.fsel { padding:9px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:'Nunito',sans-serif; font-size:13px; outline:none; background:var(--white); color:var(--text); }
+.controls{display:flex;gap:10px;margin-bottom:14px;}
+.ctrl-btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);color:var(--navy);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;}
+.ctrl-btn.scanning{background:var(--navy);border-color:var(--navy);color:#fff;}
 
-/* CHECK-IN CARD */
-.ci-card { background:var(--white); border:1.5px solid var(--border); border-radius:14px; padding:0; overflow:hidden; box-shadow:var(--shadow); max-width:560px; margin:0 auto; }
-.ci-card-head { background:var(--navy); padding:18px 22px; }
-.ci-card-name { font-family:'Cormorant Garamond',serif; color:#fff; font-size:26px; font-weight:600; }
-.ci-card-id { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; font-family:monospace; }
-.ci-card-body { padding:20px 22px; }
-.ci-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; }
-.ci-row:last-child { border-bottom:none; }
-.ci-lbl { color:var(--muted); font-weight:600; font-size:13px; }
-.ci-val { font-weight:700; color:var(--navy); }
-.ci-actions { padding:16px 22px; background:var(--off); border-top:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap; }
+.manual-section{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+.manual-section h3{font-size:11px;font-weight:700;color:var(--brown);margin-bottom:9px;text-transform:uppercase;letter-spacing:0.07em;}
+.manual-row{display:flex;gap:8px;}
+.manual-input{flex:1;padding:10px 13px;background:var(--off);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;outline:none;}
+.manual-input:focus{border-color:var(--navy3);}
+.manual-btn{padding:10px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
-/* TOAST */
-.toast { position:fixed; bottom:28px; right:28px; background:var(--navy); color:var(--gold2); padding:12px 20px; border-radius:10px; font-size:13px; font-weight:700; border:1px solid var(--gold); box-shadow:0 8px 32px rgba(27,46,75,0.3); transform:translateY(80px); opacity:0; transition:all 0.3s; z-index:999; max-width:320px; }
-.toast.show { transform:translateY(0); opacity:1; }
+.search-results{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-top:8px;overflow:hidden;display:none;}
+.search-result-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;display:flex;justify-content:space-between;align-items:center;}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item:hover{background:var(--navy-pale);}
+.sri-name{font-weight:700;color:var(--navy);font-size:14px;}
+.sri-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+.sri-btn{background:var(--navy);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;}
 
-/* SETUP */
-.setup-step { display:flex; gap:14px; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:16px; align-items:flex-start; margin-bottom:14px; }
-.step-num { width:30px; height:30px; background:var(--navy); color:var(--gold2); border-radius:50%; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.step-content h4 { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:4px; }
-.step-content p { font-size:13px; color:var(--mid); line-height:1.6; }
-.step-content code { background:var(--navy-pale); padding:2px 6px; border-radius:4px; font-size:11px; font-family:monospace; color:var(--navy2); word-break:break-all; }
+.recent-log{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+.recent-log h3{font-size:11px;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;font-weight:700;}
+.log-entry{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.log-entry:last-child{border-bottom:none;}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.log-dot.ok{background:var(--green2);}
+.log-dot.already{background:var(--amber2);}
+.log-dot.denied{background:var(--red2);}
+.log-name{font-size:13px;color:var(--text);flex:1;font-weight:600;}
+.log-meta{font-size:11px;color:var(--muted);}
 
-.print-grid { display:flex; flex-wrap:wrap; gap:14px; }
-@media print {
-  body{background:white;} .header,.tabs,.actions,#print-controls{display:none!important;}
-  .panel{display:block!important;padding:0;max-width:none;} #panel-print{display:block;}
-  .print-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}
-}
+.diag-box{background:var(--navy);color:var(--gold2);border-radius:10px;padding:14px;margin-bottom:14px;font-size:11px;font-family:monospace;line-height:1.8;display:none;}
+.diag-box.show{display:block;}
+
+.setup-overlay{position:fixed;inset:0;background:rgba(27,46,75,0.7);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.setup-box{background:var(--white);border:2px solid var(--gold);border-radius:16px;padding:28px;max-width:400px;width:100%;}
+.setup-box h2{font-family:'Cormorant Garamond',serif;color:var(--navy);font-size:24px;margin-bottom:6px;}
+.setup-box p{font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6;}
+.setup-label{font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:5px;}
+.setup-input{width:100%;padding:11px 13px;background:var(--off);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Nunito',sans-serif;font-size:12px;margin-bottom:12px;outline:none;}
+.setup-save{width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.setup-skip{width:100%;padding:9px;background:transparent;color:var(--muted);border:none;font-family:'Nunito',sans-serif;font-size:13px;cursor:pointer;}
+.setup-status{font-size:12px;color:var(--green);font-weight:600;margin-top:4px;min-height:18px;}
 </style>
 </head>
 <body>
 
+<div class="setup-overlay" id="setup-overlay">
+  <div class="setup-box">
+    <h2>Scanner Setup</h2>
+    <p>Enter your Google Apps Script URL. This connects the scanner to your member sheet for live lookups and meal tracking.</p>
+    <span class="setup-label">Apps Script URL (read + write)</span>
+    <input class="setup-input" id="setup-script-url" type="text" placeholder="https://script.google.com/macros/s/…/exec">
+    <span class="setup-label">Published CSV URL (member list)</span>
+    <input class="setup-input" id="setup-csv-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv">
+    <button class="setup-save" onclick="saveSetup()">Save &amp; Sync Members</button>
+    <div class="setup-status" id="setup-status"></div>
+    <button class="setup-skip" onclick="skipSetup()">Skip for now</button>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="scan-popup" id="scan-popup" onclick="dismissPopup()">
+  <div class="scan-popup-inner">
+    <span class="popup-icon" id="popup-icon">&#10003;</span>
+    <div class="popup-status" id="popup-status">SUCCESS</div>
+    <div class="popup-name" id="popup-name"></div>
+    <div class="popup-detail" id="popup-detail"></div>
+  </div>
+</div>
+
 <div class="header">
-  <div class="header-title">COGASOC Registration Portal</div>
-  <button class="hbtn" onclick="switchTab('setup')">&#9881; Setup</button>
+  <div class="header-brand">
+    <div class="header-title">Meal Scanner</div>
+    <div class="header-sub">COGASOC Registration Portal</div>
+  </div>
+  <div class="meal-selector">
+    <button class="meal-btn active" id="btn-b" onclick="setMeal('breakfast')">Breakfast</button>
+    <button class="meal-btn" id="btn-l" onclick="setMeal('lunch')">Lunch</button>
+    <button class="meal-btn" id="btn-t" onclick="setMeal('test')">Test</button>
+  </div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('onsite')">On-Site Registration</div>
-  <div class="tab" onclick="switchTab('checkin')">Check In Member</div>
-  <div class="tab" onclick="switchTab('members')">Member List</div>
-  <div class="tab" onclick="switchTab('import')">Bulk Import</div>
-  <div class="tab" onclick="switchTab('print')">Print Cards</div>
-  <div class="tab" onclick="switchTab('setup')">Setup</div>
-</div>
+<div class="sync-bar" id="sync-bar">Syncing members...</div>
+<div class="test-banner" id="test-banner">TEST MODE — scans will NOT be recorded</div>
+<div class="day-bar" id="day-bar"></div>
 
-<!-- ON-SITE REGISTRATION -->
-<div class="panel active" id="panel-onsite">
-  <div class="section-title">On-Site Registration</div>
-  <div class="section-desc">For new members registering in person. Fill out their information, collect payment, and print their card on the spot.</div>
+<div class="main">
 
-  <div class="form-grid">
-    <div class="form-group"><label>First Name *</label><input type="text" id="fname" placeholder="Sarah" autocomplete="given-name"></div>
-    <div class="form-group"><label>Last Name *</label><input type="text" id="lname" placeholder="Cohen" autocomplete="family-name"></div>
-    <div class="form-group"><label>Email</label><input type="email" id="email" placeholder="sarah@example.com"></div>
-    <div class="form-group"><label>Phone</label><input type="tel" id="phone" placeholder="(555) 000-0000"></div>
-    <div class="form-group"><label>Tabernacle</label>
-      <select id="tabernacle">
-        <option value="">-- Select Tabernacle --</option>
-        <option>Anchorage</option><option>Alexandria</option><option>Atlanta</option>
-        <option>Atlantic City</option><option>Baltimore</option><option>Belleville</option>
-        <option>Boston</option><option>Brooklyn</option><option>Charlotte</option>
-        <option>Chicago</option><option>Cincinnati</option><option>Cleveland</option>
-        <option>Detroit</option><option>Greensboro</option><option>Harrisburg</option>
-        <option>Hartford</option><option>Jacksonville</option><option>Los Angeles</option>
-        <option>Miami</option><option>Mt. Vernon</option><option>Newark - Plainfield</option>
-        <option>Philadelphia</option><option>Providence</option><option>Richmond</option>
-        <option>Roanoke</option><option>Rochester</option><option>Salisbury</option>
-        <option>Southern Pines</option><option>Washington</option><option>Wilmington</option>
-        <option>Zanesville</option>
-      </select>
+  <div class="stats-bar">
+    <div class="stat-box"><div class="stat-num" id="stat-served">0</div><div class="stat-label">Served</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-blocked">0</div><div class="stat-label">Blocked</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Members</div></div>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div class="result-status">
+      <div class="status-icon" id="result-icon">&#10003;</div>
+      <div class="status-label" id="result-label">Approved</div>
     </div>
-    <div class="form-group"><label>Age Group</label>
-      <select id="agegroup">
-        <option value="">-- Select --</option>
-        <option value="adult">Adult</option>
-        <option value="senior">Senior</option>
-        <option value="child">Child</option>
-      </select>
+    <div class="result-name" id="result-name"></div>
+    <div class="result-detail" id="result-detail"></div>
+    <div class="result-meta">
+      <div class="meta-box"><div class="meta-lbl">Meal</div><div class="meta-val" id="result-meal">—</div></div>
+      <div class="meta-box"><div class="meta-lbl">Day</div><div class="meta-val" id="result-day">—</div></div>
+      <div class="meta-box"><div class="meta-lbl">Time</div><div class="meta-val" id="result-time">—</div></div>
     </div>
+  </div>
 
-    <div class="form-group full">
-      <label>Payment Type</label>
-      <div class="pill-group">
-        <div class="pill" id="pill-full" data-val="full" onclick="selectPayment(this)">Paying in Full</div>
-        <div class="pill" id="pill-balance" data-val="balance" onclick="selectPayment(this)">Paying Balance</div>
+  <div class="scanner-wrap" id="scanner-wrap">
+    <video id="camera-video" playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
+    <div class="scan-overlay">
+      <div class="scan-frame">
+        <div class="scan-line"></div>
+        <div class="cbr"></div>
+        <div class="cbl"></div>
       </div>
     </div>
-
-    <div class="form-group" id="balance-field" style="display:none;">
-      <label>Balance Amount</label>
-      <input type="text" id="balance-amount" placeholder="e.g. $50.00 remaining">
-    </div>
-
-    <div class="form-group full">
-      <label>Notes (optional)</label>
-      <input type="text" id="notes" placeholder="Any additional notes...">
+    <div class="scanner-placeholder" id="scanner-placeholder">
+      <p>Tap "Start Camera" to begin scanning</p>
     </div>
   </div>
 
-  <div class="actions">
-    <button class="btn-primary" onclick="registerOnsite()">Register &amp; Generate Card</button>
-    <button class="btn-secondary" onclick="clearOnsiteForm()">Clear</button>
-    <span id="reg-status" style="font-size:13px;color:var(--navy3);font-weight:700;"></span>
+  <div class="controls">
+    <button class="ctrl-btn" id="scan-toggle" onclick="toggleCamera()">Start Camera</button>
+    <button class="ctrl-btn" onclick="showSettings()">&#9881; Settings</button>
   </div>
 
-  <div id="card-result" style="display:none;margin-top:28px;">
-    <div class="divider"></div>
-    <div class="section-title" style="margin-bottom:4px;">Card Generated</div>
-    <div class="section-desc">Print the ID card now or share the digital link.</div>
-    <div class="card-result-wrap">
-      <div>
-        <div style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Member ID Card</div>
-        <div class="id-card" id="preview-badge">
-          <div class="id-top">
-            <div class="id-org">
-              <div class="id-org-name">COGASOC</div>
-              <div class="id-org-sub">Passover Event Pass</div>
-            </div>
-            <div class="id-gold-bar"></div>
-          </div>
-          <div class="id-arc"></div>
-          <div class="id-body">
-            <div class="id-qr"><div id="qr-small"></div></div>
-            <div class="id-info">
-              <div class="id-name" id="badge-name">Guest Name</div>
-              <div class="id-id" id="badge-id">ID: —</div>
-              <div class="id-badges">
-                <div class="id-badge gold" id="badge-tab">—</div>
-                <div class="id-badge" id="badge-age">—</div>
-              </div>
-            </div>
-          </div>
-          <div class="id-footer">
-            <div class="id-footer-txt">COGASOC</div>
-            <div class="id-footer-txt">Passover 2025</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;">
-          <button class="btn-primary" style="flex:1;font-size:12px;padding:9px;" onclick="printSingleBadge()">Print Card</button>
-          <button class="btn-secondary" style="font-size:12px;padding:9px;" onclick="copyDigitalLink()">Copy Link</button>
-          <button class="btn-gold" style="font-size:12px;padding:9px;" onclick="openDigitalBadge()">Open Digital</button>
-        </div>
-      </div>
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;">Member Details</div>
-        <table style="font-size:13px;width:100%;">
-          <tr><td style="padding:5px 0;color:var(--muted);width:110px;">Name</td><td id="d-name" style="font-weight:700;color:var(--navy)"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Member ID</td><td id="d-id" style="font-family:monospace;font-size:12px;font-weight:700;color:var(--navy2)"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Tabernacle</td><td id="d-tab"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Age Group</td><td id="d-age"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Payment</td><td id="d-pay"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Email</td><td id="d-email" style="font-size:12px"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Phone</td><td id="d-phone" style="font-size:12px"></td></tr>
-          <tr><td style="padding:5px 0;color:var(--muted)">Notes</td><td id="d-notes" style="font-size:12px;color:var(--muted)"></td></tr>
-        </table>
-      </div>
+  <div class="manual-section">
+    <h3>Manual Lookup — Search by Name or ID</h3>
+    <div class="manual-row">
+      <input class="manual-input" id="manual-input" type="text" placeholder="Type first name, last name, or ID...">
+      <button class="manual-btn" onclick="doSearch()">Search</button>
     </div>
+    <div class="search-results" id="search-results"></div>
   </div>
+
+  <div class="diag-box" id="diag-box"></div>
+
+  <div class="recent-log">
+    <h3>Recent Scans — <span id="log-count">0</span> today</h3>
+    <div id="log-list"><div style="padding:16px 0;font-size:13px;color:var(--muted);text-align:center;">No scans yet</div></div>
+  </div>
+
 </div>
-
-<!-- CHECK IN -->
-<div class="panel" id="panel-checkin">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
-    <div>
-      <div class="section-title" style="margin-bottom:0;">Check In Member</div>
-      <div class="section-desc" style="margin-bottom:0;">Pre-registered members. Search, confirm arrival, hand over package.</div>
-    </div>
-    <button class="btn-secondary" onclick="loadFromSheet()" style="font-size:12px;padding:8px 16px;" id="refresh-ci">&#8635; Refresh from Sheet</button>
-  </div>
-
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
-    <input class="search-bar" type="text" id="ci-search" placeholder="Search name, ID, or Tabernacle..." oninput="renderCheckinList()" style="width:300px;">
-    <select class="fsel" id="ci-filter-tab" onchange="renderCheckinList()">
-      <option value="">All Tabernacles</option>
-      <option>Anchorage</option><option>Alexandria</option><option>Atlanta</option>
-      <option>Atlantic City</option><option>Baltimore</option><option>Belleville</option>
-      <option>Boston</option><option>Brooklyn</option><option>Charlotte</option>
-      <option>Chicago</option><option>Cincinnati</option><option>Cleveland</option>
-      <option>Detroit</option><option>Greensboro</option><option>Harrisburg</option>
-      <option>Hartford</option><option>Jacksonville</option><option>Los Angeles</option>
-      <option>Miami</option><option>Mt. Vernon</option><option>Newark - Plainfield</option>
-      <option>Philadelphia</option><option>Providence</option><option>Richmond</option>
-      <option>Roanoke</option><option>Rochester</option><option>Salisbury</option>
-      <option>Southern Pines</option><option>Washington</option><option>Wilmington</option>
-      <option>Zanesville</option>
-    </select>
-    <select class="fsel" id="ci-filter-status" onchange="renderCheckinList()">
-      <option value="">All Status</option>
-      <option value="pending">Not Checked In</option>
-      <option value="checkedin">Checked In</option>
-    </select>
-    <button class="btn-secondary" style="font-size:12px;padding:9px 14px;" onclick="fetchFromSheet(function(){renderCheckinList();showToast('Refreshed from sheet!')});">&#8635; Refresh</button>
-  </div>
-
-  <div style="display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-align:center;min-width:110px;">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--navy);" id="ci-stat-total">0</div>
-      <div style="font-size:10px;font-weight:700;color:var(--brown2);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Total</div>
-    </div>
-    <div style="background:var(--green-bg);border:1px solid rgba(22,163,74,0.2);border-radius:10px;padding:14px 20px;text-align:center;min-width:110px;">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--green);" id="ci-stat-in">0</div>
-      <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Checked In</div>
-    </div>
-    <div style="background:var(--amber-bg);border:1px solid rgba(146,64,14,0.2);border-radius:10px;padding:14px 20px;text-align:center;min-width:110px;">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--amber);" id="ci-stat-out">0</div>
-      <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;">Pending</div>
-    </div>
-  </div>
-
-  <div id="ci-member-card" style="display:none;margin-bottom:24px;">
-    <!-- filled dynamically -->
-  </div>
-
-  <div style="overflow-x:auto;">
-    <table>
-      <thead><tr><th>Name</th><th>ID</th><th>Tabernacle</th><th>Age</th><th>Payment</th><th>Status</th><th></th></tr></thead>
-      <tbody id="ci-tbody"></tbody>
-    </table>
-  </div>
-  <div id="ci-empty" style="text-align:center;padding:50px;color:var(--muted);font-size:14px;display:none;">No members found.</div>
-</div>
-
-<!-- MEMBER LIST -->
-<div class="panel" id="panel-members">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-    <div>
-      <div class="section-title" style="margin-bottom:0;">Member List</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:2px;"><span id="total-count">0</span> total members</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn-secondary" onclick="loadFromSheet()" style="font-size:12px;padding:8px 16px;">&#8635; Refresh from Sheet</button>
-      <input class="search-bar" type="text" id="ml-search" placeholder="Search..." oninput="renderMemberList()">
-      <select class="fsel" id="ml-filter-tab" onchange="renderMemberList()">
-        <option value="">All Tabernacles</option>
-        <option>Anchorage</option><option>Alexandria</option><option>Atlanta</option>
-        <option>Atlantic City</option><option>Baltimore</option><option>Belleville</option>
-        <option>Boston</option><option>Brooklyn</option><option>Charlotte</option>
-        <option>Chicago</option><option>Cincinnati</option><option>Cleveland</option>
-        <option>Detroit</option><option>Greensboro</option><option>Harrisburg</option>
-        <option>Hartford</option><option>Jacksonville</option><option>Los Angeles</option>
-        <option>Miami</option><option>Mt. Vernon</option><option>Newark - Plainfield</option>
-        <option>Philadelphia</option><option>Providence</option><option>Richmond</option>
-        <option>Roanoke</option><option>Rochester</option><option>Salisbury</option>
-        <option>Southern Pines</option><option>Washington</option><option>Wilmington</option>
-        <option>Zanesville</option>
-      </select>
-      <select class="fsel" id="ml-filter-pay" onchange="renderMemberList()">
-        <option value="">All Payment</option>
-        <option value="full">Paid in Full</option>
-        <option value="balance">Balance Due</option>
-      </select>
-      <select class="fsel" id="ml-filter-ci" onchange="renderMemberList()">
-        <option value="">All Check-in</option>
-        <option value="checkedin">Checked In</option>
-        <option value="pending">Pending</option>
-      </select>
-      <button class="btn-secondary" style="font-size:12px;padding:9px 14px;" onclick="fetchFromSheet(function(){renderMemberList();showToast('Refreshed from sheet!')});">&#8635; Refresh</button>
-      <button class="btn-secondary" onclick="exportCSV()" style="font-size:12px;padding:9px 14px;">Export CSV</button>
-    </div>
-  </div>
-  <div style="overflow-x:auto;">
-    <table>
-      <thead><tr><th>Name</th><th>ID</th><th>Tabernacle</th><th>Age</th><th>Payment</th><th>Check-in</th><th>Email</th><th>Phone</th><th></th></tr></thead>
-      <tbody id="ml-tbody"></tbody>
-    </table>
-  </div>
-  <div id="ml-empty" style="text-align:center;padding:60px;color:var(--muted);font-size:14px;display:none;">No members yet.</div>
-</div>
-
-<!-- BULK IMPORT -->
-<div class="panel" id="panel-import">
-  <div class="section-title">Bulk Import</div>
-  <div class="section-desc">Paste your pre-registered list. Format: FirstName, LastName, Email, Phone, Tabernacle — one per line. All imported as Paid in Full, pending check-in.</div>
-  <textarea id="import-text" placeholder="Sarah Cohen&#10;David,Levy,,, Brooklyn&#10;Rachel,Goldstein,rachel@email.com,555-1234,Atlanta" style="width:100%;height:180px;padding:13px;border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;resize:vertical;outline:none;background:var(--white);color:var(--text);line-height:1.7;margin-bottom:14px;"></textarea>
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
-    <button class="btn-primary" onclick="runBulkImport()">Import &amp; Generate Cards</button>
-    <button class="btn-secondary" onclick="document.getElementById('import-text').value=''">Clear</button>
-    <span id="import-status" style="font-size:13px;color:var(--navy3);font-weight:700;"></span>
-  </div>
-  <div id="import-preview" style="display:none;">
-    <div class="divider"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <div class="section-title" style="margin-bottom:0;"><span id="import-count">0</span> cards ready to print</div>
-      <button class="btn-gold" onclick="printGridBadges('import-grid')">Print All</button>
-    </div>
-    <div id="import-grid" class="print-grid"></div>
-  </div>
-</div>
-
-<!-- PRINT ALL -->
-<div class="panel" id="panel-print">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:16px;" id="print-controls">
-    <div>
-      <div class="section-title">Print All Cards</div>
-      <div class="section-desc" style="margin-bottom:0;">Credit card size (3.375" x 2.125") — 3 per row, laminate ready</div>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button class="btn-secondary" onclick="generateAllBadges()">Refresh</button>
-      <button class="btn-gold" onclick="printGridBadges('all-print-grid')">Print All</button>
-    </div>
-  </div>
-  <div id="all-print-grid" class="print-grid"></div>
-  <div id="no-print" style="text-align:center;padding:60px;color:var(--muted);font-size:14px;">Register members to generate cards.</div>
-</div>
-
-<!-- SETUP -->
-<div class="panel" id="panel-setup">
-  <div class="section-title">Setup &amp; Connections</div>
-  <div class="section-desc">Connect your master Google Sheet so all devices read and write live data.</div>
-
-  <div class="setup-step">
-    <div class="step-num">1</div>
-    <div class="step-content">
-      <h4>Set up your Google Sheet</h4>
-      <p>Create a Google Sheet with your master member list. Make sure Row 1 has these exact headers:<br><br>
-      <code>GuestID | FirstName | LastName | Email | Phone | Tabernacle | AgeGroup | PaymentType | BalanceNotes | CheckinStatus | RegisteredAt | Notes</code><br><br>
-      You can also add meal columns after Notes: <code>B_Mar31 | L_Mar31 | B_Apr1 | L_Apr1 ...</code> for daily meal tracking.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="step-num">2</div>
-    <div class="step-content">
-      <h4>Publish your sheet as CSV (for reading)</h4>
-      <p>In your Google Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>. Choose <em>Sheet1</em> and <em>Comma-separated values (.csv)</em>. Click <strong>Publish</strong>. Copy the URL it gives you — paste it below as the <strong>CSV URL</strong>.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="step-num">3</div>
-    <div class="step-content">
-      <h4>Deploy Apps Script (for writing)</h4>
-      <p>In your Sheet: <strong>Extensions &rarr; Apps Script</strong>. Paste the script below. <strong>Deploy &rarr; New Deployment &rarr; Web App</strong>. Access: <em>Anyone</em>. Copy the URL — paste it below as the <strong>Apps Script URL</strong>.</p>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="step-num">4</div>
-    <div class="step-content">
-      <h4>Enter your URLs here</h4>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
-        <div>
-          <label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:6px;">CSV URL (for reading all members)</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <input type="text" id="csv-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" style="flex:1;min-width:260px;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;outline:none;">
-          </div>
-        </div>
-        <div>
-          <label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:6px;">Apps Script URL (for saving new registrations)</label>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <input type="text" id="sheet-url-input" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px;font-size:13px;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;outline:none;">
-          </div>
-        </div>
-        <div>
-          <button class="btn-primary" onclick="saveSheetURL()">Save &amp; Connect</button>
-          <button class="btn-secondary" style="margin-left:10px;" onclick="fetchFromSheet(function(){renderMemberList();renderCheckinList();showToast('Refreshed — '+members.length+' members loaded');})">Test Connection</button>
-        </div>
-        <div id="sheet-url-status" style="font-size:12px;color:var(--muted);font-weight:600;"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="setup-step">
-    <div class="step-num">5</div>
-    <div class="step-content">
-      <h4>Apps Script — copy this</h4>
-      <pre style="background:var(--navy);color:var(--gold2);padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-top:8px;">const SN = 'Sheet1';
-function doPost(e) {
-  try {
-    const d = JSON.parse(e.postData.contents);
-    const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SN);
-    if (d.action==='register') {
-      const g=d.guest;
-      s.appendRow([g.id,g.firstName,g.lastName,g.email||'',g.phone||'',g.tabernacle||'',g.ageGroup||'',g.paymentType||'',g.balanceNotes||'','pending',g.registeredAt,g.notes||'',...new Array(16).fill('')]);
-      return R({ok:true});
-    }
-    if (d.action==='checkin') {
-      const rows=s.getDataRange().getValues(), hdr=rows[0];
-      const ci=hdr.indexOf('CheckinStatus');
-      for(let i=1;i<rows.length;i++){
-        if(rows[i][0]===d.guestId){
-          if(ci>=0) s.getRange(i+1,ci+1).setValue('checkedin');
-          return R({ok:true});
-        }
-      }
-      return R({ok:false,error:'Not found'});
-    }
-    if (d.action==='scan') {
-      const rows=s.getDataRange().getValues(), hdr=rows[0];
-      const ci=hdr.indexOf(d.mealCol);
-      if(ci<0) return R({ok:false,error:'Unknown column'});
-      for(let i=1;i<rows.length;i++){
-        if(rows[i][0]===d.guestId){
-          const cell=s.getRange(i+1,ci+1);
-          if(cell.getValue()==='USED') return R({ok:true,status:'already_used',name:rows[i][1]+' '+rows[i][2]});
-          cell.setValue('USED');
-          return R({ok:true,status:'ok',name:rows[i][1]+' '+rows[i][2],tabernacle:rows[i][5]});
-        }
-      }
-      return R({ok:false,error:'Not found'});
-    }
-  } catch(err){return R({ok:false,error:err.toString()});}
-}
-function R(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON);}</pre>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-<div id="sync-status" style="display:none;position:fixed;top:0;left:0;right:0;background:var(--navy2);color:var(--gold2);text-align:center;font-size:12px;font-weight:700;padding:6px;z-index:998;letter-spacing:0.04em;border-bottom:2px solid var(--gold);"></div>
 
 <script>
-var AGE = {adult:'Adult', senior:'Senior', child:'Child', '':'—'};
-var PAY = {full:'Paid in Full', balance:'Paying Balance', '':'—'};
-var members = JSON.parse(localStorage.getItem('cogasoc_members') || '[]');
-var sheetURL = localStorage.getItem('passover_sheet_url') || '';
+var DAYS = [
+  {key:'TEST', label:'TEST DAY', date:'test'},
+  {key:'Mar31',label:'Mar 31',date:'2025-03-31'},
+  {key:'Apr1', label:'Apr 1', date:'2025-04-01'},
+  {key:'Apr2', label:'Apr 2', date:'2025-04-02'},
+  {key:'Apr3', label:'Apr 3', date:'2025-04-03'},
+  {key:'Apr4', label:'Apr 4', date:'2025-04-04'},
+  {key:'Apr5', label:'Apr 5', date:'2025-04-05'},
+  {key:'Apr6', label:'Apr 6', date:'2025-04-06'},
+  {key:'Apr7', label:'Apr 7', date:'2025-04-07'},
+  {key:'Apr8', label:'Apr 8', date:'2025-04-08'}
+];
+
+var scriptURL = localStorage.getItem('passover_sheet_url') || '';
 var csvURL = localStorage.getItem('passover_csv_url') || '';
-var selPayment = '';
-var currentResultId = '';
+var currentMeal = 'breakfast';
+var currentDay = autoDay();
+var scanning = false;
+var videoStream = null;
+var scanCanvas = document.createElement('canvas');
+var scanCtx = scanCanvas.getContext('2d');
+var scanInterval = null;
+var lastId = '';
+var lastTime = 0;
+var members = [];
+var stats = {served:0, blocked:0};
+var scanLog = [];
 
 window.addEventListener('DOMContentLoaded', function() {
-  var inp = document.getElementById('sheet-url-input');
-  if (inp) inp.value = sheetURL;
-  var csvInp = document.getElementById('csv-url-input');
-  if (csvInp) csvInp.value = csvURL;
-  updateSheetStatus();
-  if (!members.find(function(g){ return g.id==='PSTEST1'; })) {
-    members.push({id:'PSTEST1',firstName:'Test',lastName:'Guest',email:'test@cogasoc.org',phone:'555-0000',tabernacle:'Atlanta',ageGroup:'adult',paymentType:'full',balanceNotes:'',checkinStatus:'pending',notes:'TEST RECORD',registeredAt:new Date().toISOString()});
-    saveMembers();
+  buildDayBar();
+  var hr = new Date().getHours();
+  setMeal(hr >= 11 ? 'lunch' : 'breakfast');
+  if (scriptURL || csvURL) {
+    document.getElementById('setup-overlay').style.display = 'none';
+    document.getElementById('setup-script-url').value = scriptURL;
+    document.getElementById('setup-csv-url').value = csvURL;
+    loadMembers();
   }
-  if (sheetURL) fetchFromSheet();
+  document.getElementById('manual-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') doSearch();
+  });
+  document.getElementById('manual-input').addEventListener('input', function(){
+    if (!this.value.trim()) document.getElementById('search-results').style.display = 'none';
+  });
 });
 
-var sheetLoading = false;
+function autoDay() {
+  var today = new Date().toISOString().slice(0,10);
+  var d = DAYS.find(function(x){ return x.date === today; });
+  return d ? d.key : 'Mar31';
+}
 
-function fetchFromSheet(callback) {
-  var url = csvURL || sheetURL;
-  if (!url || sheetLoading) { if (callback) callback(); return; }
-  sheetLoading = true;
-  showSyncStatus('Syncing with sheet...');
-  // If it's a published CSV URL, parse it directly
-  if (url.indexOf('output=csv') >= 0 || url.indexOf('.csv') >= 0) {
-    fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now())
+function buildDayBar() {
+  var bar = document.getElementById('day-bar');
+  DAYS.forEach(function(d) {
+    var chip = document.createElement('div');
+    chip.className = 'day-chip' + (d.key === currentDay ? ' active' : '');
+    chip.textContent = d.label;
+    chip.onclick = function() {
+      currentDay = d.key;
+      document.querySelectorAll('.day-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+    };
+    bar.appendChild(chip);
+  });
+}
+
+/* ── LOAD MEMBERS FROM SHEET ── */
+function loadMembers() {
+  showSync('loading', 'Syncing members from sheet...');
+  // Try CSV first (faster, no auth)
+  var url = csvURL || scriptURL;
+  if (!url) { showSync('error', 'No sheet URL configured'); return; }
+
+  if (csvURL) {
+    fetch(csvURL + (csvURL.indexOf('?')>=0?'&':'?') + 't=' + Date.now())
       .then(function(r){ return r.text(); })
       .then(function(text){
-        var rows = parseCSV(text);
-        if (rows.length > 1) {
-          var headers = rows[0].map(function(h){ return h.trim(); });
-          var sheetMembers = rows.slice(1).map(function(row){
-            var g = {};
-            headers.forEach(function(h,i){ g[h] = (row[i]||'').trim(); });
+        var parsed = parseCSV(text);
+        if (parsed.length > 1) {
+          var headers = parsed[0].map(function(h){ return h.trim(); });
+          members = parsed.slice(1).map(function(row){
+            var o = {};
+            headers.forEach(function(h,i){ o[h] = (row[i]||'').trim(); });
             return {
-              id: g.GuestID || g.ID || g.id || '',
-              firstName: g.FirstName || g['First Name'] || g.firstName || '',
-              lastName: g.LastName || g['Last Name'] || g.lastName || '',
-              email: g.Email || g.email || '',
-              phone: g.Phone || g.phone || '',
-              tabernacle: g.Tabernacle || g.tabernacle || '',
-              ageGroup: (g.AgeGroup || g['Age Group'] || g.ageGroup || '').toLowerCase(),
-              paymentType: (g.PaymentType || g['Payment Type'] || g.paymentType || '').toLowerCase(),
-              balanceNotes: g.BalanceNotes || g['Balance Notes'] || g.balanceNotes || '',
-              checkinStatus: (g.CheckinStatus || g['Checkin Status'] || g.checkinStatus || 'pending').toLowerCase(),
-              notes: g.Notes || g.notes || '',
-              registeredAt: g.RegisteredAt || g['Registered At'] || g.registeredAt || ''
+              id: o.GuestID || o.ID || '',
+              firstName: o.FirstName || o['First Name'] || '',
+              lastName: o.LastName || o['Last Name'] || '',
+              tabernacle: o.Tabernacle || '',
+              ageGroup: o.AgeGroup || '',
+              paymentType: o.PaymentType || '',
+              checkinStatus: o.CheckinStatus || 'pending'
             };
           }).filter(function(m){ return m.id && m.firstName; });
-          var sheetIds = sheetMembers.map(function(m){ return m.id; });
-          var localOnly = members.filter(function(m){ return !sheetIds.includes(m.id) && m.id !== 'PSTEST1'; });
-          members = sheetMembers.concat(localOnly);
-          saveMembers();
-          showSyncStatus('Synced — ' + members.length + ' members loaded');
+          document.getElementById('stat-total').textContent = members.length;
+          showSync('ok', members.length + ' members loaded');
+          diag('CSV loaded: ' + members.length + ' members\nFirst: ' + (members[0]?members[0].firstName+' '+members[0].lastName:'none'));
         } else {
-          showSyncStatus('Sheet connected — no data found yet');
+          showSync('error', 'CSV appears empty — check sheet is published');
         }
-        sheetLoading = false;
-        if (callback) callback();
       })
-      .catch(function(err){
-        showSyncStatus('Could not reach sheet — showing local data');
-        sheetLoading = false;
-        if (callback) callback();
+      .catch(function(e){
+        showSync('error', 'CSV error: ' + e.message);
+        diag('CSV FAIL: ' + e.message);
+        if (scriptURL) loadMembersViaScript();
       });
-  } else {
-    // Apps Script JSON endpoint
-    fetch(url + '?t=' + Date.now())
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if (data.guests && data.guests.length > 0) {
-          var sheetMembers = data.guests.map(function(g){
-            return {
-              id: g.GuestID || '',
-              firstName: g.FirstName || '',
-              lastName: g.LastName || '',
-              email: g.Email || '',
-              phone: g.Phone || '',
-              tabernacle: g.Tabernacle || '',
-              ageGroup: (g.AgeGroup||'').toLowerCase(),
-              paymentType: (g.PaymentType||'').toLowerCase(),
-              balanceNotes: g.BalanceNotes || '',
-              checkinStatus: (g.CheckinStatus||'pending').toLowerCase(),
-              notes: g.Notes || '',
-              registeredAt: g.RegisteredAt || ''
-            };
-          }).filter(function(m){ return m.id && m.firstName; });
-          var sheetIds = sheetMembers.map(function(m){ return m.id; });
-          var localOnly = members.filter(function(m){ return !sheetIds.includes(m.id) && m.id !== 'PSTEST1'; });
-          members = sheetMembers.concat(localOnly);
-          saveMembers();
-          showSyncStatus('Synced — ' + members.length + ' members loaded');
-        } else {
-          showSyncStatus('Connected — no members yet');
-        }
-        sheetLoading = false;
-        if (callback) callback();
-      })
-      .catch(function(err){
-        showSyncStatus('Sheet unavailable — showing local data');
-        sheetLoading = false;
-        if (callback) callback();
-      });
+  } else if (scriptURL) {
+    loadMembersViaScript();
   }
+}
+
+function loadMembersViaScript() {
+  fetch(scriptURL + '?t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.guests && data.guests.length > 0) {
+        members = data.guests.map(function(g){
+          return {
+            id: g.GuestID || '',
+            firstName: g.FirstName || '',
+            lastName: g.LastName || '',
+            tabernacle: g.Tabernacle || '',
+            ageGroup: g.AgeGroup || '',
+            paymentType: g.PaymentType || '',
+            checkinStatus: g.CheckinStatus || 'pending'
+          };
+        }).filter(function(m){ return m.id && m.firstName; });
+        document.getElementById('stat-total').textContent = members.length;
+        showSync('ok', members.length + ' members loaded via script');
+        diag('Script loaded: ' + members.length + ' members');
+      } else {
+        showSync('error', 'No members found in sheet');
+      }
+    })
+    .catch(function(e){
+      showSync('error', 'Cannot reach sheet: ' + e.message);
+      diag('Script FAIL: ' + e.message);
+    });
 }
 
 function parseCSV(text) {
@@ -648,376 +413,350 @@ function parseCSV(text) {
   return rows;
 }
 
-function showSyncStatus(msg) {
-  var el = document.getElementById('sync-status');
-  if (el) { el.textContent = msg; el.style.display='block'; setTimeout(function(){ el.style.display='none'; }, 4000); }
+function showSync(type, msg) {
+  var bar = document.getElementById('sync-bar');
+  bar.textContent = msg;
+  bar.className = 'sync-bar show ' + type;
+  if (type === 'ok') setTimeout(function(){ bar.classList.remove('show'); }, 3000);
 }
 
-function switchTab(tab) {
-  var order = ['onsite','checkin','members','import','print','setup'];
-  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active', order[i]===tab); });
-  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
-  document.getElementById('panel-'+tab).classList.add('active');
-  if (tab==='members') {
-    if (sheetURL) { fetchFromSheet(function(){ renderMemberList(); }); } else { renderMemberList(); }
-  }
-  if (tab==='checkin') {
-    if (sheetURL) { fetchFromSheet(function(){ renderCheckinList(); }); } else { renderCheckinList(); }
-  }
-  if (tab==='print') generateAllBadges();
+/* ── SETUP ── */
+function saveSetup() {
+  scriptURL = document.getElementById('setup-script-url').value.trim();
+  csvURL = document.getElementById('setup-csv-url').value.trim();
+  localStorage.setItem('passover_sheet_url', scriptURL);
+  localStorage.setItem('passover_csv_url', csvURL);
+  document.getElementById('setup-status').textContent = 'Saved! Loading members...';
+  loadMembers();
+  setTimeout(function(){
+    document.getElementById('setup-overlay').style.display = 'none';
+  }, 1500);
+}
+function skipSetup() { document.getElementById('setup-overlay').style.display = 'none'; }
+function showSettings() {
+  document.getElementById('setup-script-url').value = scriptURL;
+  document.getElementById('setup-csv-url').value = csvURL;
+  document.getElementById('setup-status').textContent = '';
+  document.getElementById('setup-overlay').style.display = 'flex';
 }
 
-function selectPayment(el) {
-  document.querySelectorAll('#panel-onsite .pill').forEach(function(p){ p.className='pill'; });
-  selPayment = el.dataset.val;
-  el.classList.add('sel-'+selPayment);
-  document.getElementById('balance-field').style.display = selPayment==='balance' ? 'flex' : 'none';
+/* ── MEAL / DAY ── */
+function setMeal(meal) {
+  currentMeal = meal;
+  var isTest = meal === 'test';
+  document.getElementById('btn-b').className = 'meal-btn' + (meal==='breakfast'?' active':'');
+  document.getElementById('btn-l').className = 'meal-btn' + (meal==='lunch'?' active':'');
+  document.getElementById('btn-t').className = 'meal-btn' + (isTest?' test-active':'');
+  document.getElementById('test-banner').classList.toggle('show', isTest);
+  document.getElementById('scanner-wrap').style.borderColor = isTest ? '#6366F1' : 'var(--navy2)';
 }
 
-function generateID() {
-  var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', id='PS';
-  for(var i=0;i<6;i++) id+=c[Math.floor(Math.random()*c.length)];
-  return id;
+/* ── CAMERA ── */
+function toggleCamera() {
+  if (scanning) stopCamera(); else startCamera();
 }
 
-function registerOnsite() {
-  var fn=document.getElementById('fname').value.trim();
-  var ln=document.getElementById('lname').value.trim();
-  if (!fn||!ln) { showToast('Please enter first and last name.'); return; }
-  if (!selPayment) { showToast('Please select a payment type.'); return; }
-  var id = generateID();
-  var balNotes = selPayment==='balance' ? document.getElementById('balance-amount').value.trim() : '';
-  var m = {
-    id:id, firstName:fn, lastName:ln,
-    email: document.getElementById('email').value.trim(),
-    phone: document.getElementById('phone').value.trim(),
-    tabernacle: document.getElementById('tabernacle').value,
-    ageGroup: document.getElementById('agegroup').value,
-    paymentType: selPayment,
-    balanceNotes: balNotes,
-    checkinStatus: 'pending',
-    notes: document.getElementById('notes').value.trim(),
-    registeredAt: new Date().toISOString()
+function startCamera() {
+  var video = document.getElementById('camera-video');
+  // Try back camera first, fall back to any camera
+  var tryCamera = function(constraints) {
+    return navigator.mediaDevices.getUserMedia(constraints)
+      .then(function(stream) {
+        videoStream = stream;
+        video.srcObject = stream;
+        return new Promise(function(resolve) {
+          video.onloadedmetadata = function() {
+            video.play().then(resolve).catch(resolve);
+          };
+        });
+      });
   };
-  members.push(m);
-  saveMembers();
-  syncToSheet(m);
-  showCardResult(m);
-  currentResultId = id;
-  document.getElementById('reg-status').textContent = 'Registered!';
-  setTimeout(function(){ document.getElementById('reg-status').textContent=''; }, 3000);
+
+  tryCamera({video:{facingMode:{exact:'environment'},width:{ideal:1280},height:{ideal:1280}}})
+    .catch(function(){ return tryCamera({video:{facingMode:'environment'}}); })
+    .catch(function(){ return tryCamera({video:true}); })
+    .then(function() {
+      video.style.display = 'block';
+      document.getElementById('scanner-placeholder').style.display = 'none';
+      scanning = true;
+      document.getElementById('scan-toggle').textContent = 'Stop Camera';
+      document.getElementById('scan-toggle').classList.add('scanning');
+      // Wait a moment for video to stabilize before scanning
+      setTimeout(function(){ scanInterval = setInterval(scanFrame, 200); }, 500);
+      diag('Camera started: ' + (video.videoWidth||'?') + 'x' + (video.videoHeight||'?'));
+    })
+    .catch(function(e) {
+      alert('Camera error: ' + e.message + '\n\nUse Manual Lookup instead.');
+      diag('Camera FAIL: ' + e.message);
+    });
 }
 
-function clearOnsiteForm() {
-  ['fname','lname','email','phone','notes','balance-amount'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('tabernacle').value='';
-  document.getElementById('agegroup').value='';
-  document.getElementById('balance-field').style.display='none';
-  document.getElementById('card-result').style.display='none';
-  document.querySelectorAll('#panel-onsite .pill').forEach(function(p){ p.className='pill'; });
-  selPayment=''; currentResultId='';
+function stopCamera() {
+  if (videoStream) videoStream.getTracks().forEach(function(t){ t.stop(); });
+  videoStream = null;
+  clearInterval(scanInterval);
+  scanning = false;
+  var video = document.getElementById('camera-video');
+  video.srcObject = null;
+  video.style.display = 'none';
+  document.getElementById('scanner-placeholder').style.display = 'flex';
+  document.getElementById('scan-toggle').textContent = 'Start Camera';
+  document.getElementById('scan-toggle').classList.remove('scanning');
 }
 
-function showCardResult(m) {
-  document.getElementById('card-result').style.display='block';
-  document.getElementById('badge-name').textContent=m.firstName+' '+m.lastName;
-  document.getElementById('badge-id').textContent='ID: '+m.id;
-  document.getElementById('badge-tab').textContent=m.tabernacle||'No Tabernacle';
-  document.getElementById('badge-age').textContent=AGE[m.ageGroup]||'—';
-  document.getElementById('d-name').textContent=m.firstName+' '+m.lastName;
-  document.getElementById('d-id').textContent=m.id;
-  document.getElementById('d-tab').textContent=m.tabernacle||'—';
-  document.getElementById('d-age').textContent=AGE[m.ageGroup]||'—';
-  document.getElementById('d-pay').textContent=PAY[m.paymentType]+(m.balanceNotes?' — '+m.balanceNotes:'');
-  document.getElementById('d-email').textContent=m.email||'—';
-  document.getElementById('d-phone').textContent=m.phone||'—';
-  document.getElementById('d-notes').textContent=m.notes||'—';
-  var qc=document.getElementById('qr-small'); qc.innerHTML='';
-  new QRCode(qc,{text:JSON.stringify({id:m.id,name:m.firstName+' '+m.lastName,tab:m.tabernacle}),width:68,height:68,colorDark:'#1B2E4B',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.M});
-  document.getElementById('card-result').scrollIntoView({behavior:'smooth',block:'nearest'});
-  showToast(m.firstName+' registered!');
+function scanFrame() {
+  var video = document.getElementById('camera-video');
+  if (!video.videoWidth || !video.videoHeight) return;
+  scanCanvas.width = video.videoWidth;
+  scanCanvas.height = video.videoHeight;
+  scanCtx.drawImage(video, 0, 0);
+  var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+  var code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'});
+  if (code && code.data) {
+    var now = Date.now();
+    if (code.data !== lastId || now - lastTime > 4000) {
+      lastId = code.data;
+      lastTime = now;
+      diag('QR detected: ' + code.data.substring(0,50));
+      processQR(code.data);
+    }
+  }
 }
+
+/* ── PROCESSING ── */
+function processQR(qrText) {
+  var guestId, guestName;
+  try {
+    var p = JSON.parse(qrText);
+    guestId = p.id; guestName = p.name;
+  } catch(e) {
+    guestId = qrText.trim().toUpperCase();
+  }
+  checkIn(guestId, guestName);
+}
+
+/* ── MANUAL SEARCH ── */
+function doSearch() {
+  var val = document.getElementById('manual-input').value.trim();
+  if (!val) return;
+  var q = val.toLowerCase();
+  var results = [];
+
+  // Search local members first
+  results = members.filter(function(m) {
+    var full = (m.firstName+' '+m.lastName).toLowerCase();
+    var id = m.id.toLowerCase();
+    return full.includes(q) || id.includes(q) ||
+           m.firstName.toLowerCase().startsWith(q) ||
+           m.lastName.toLowerCase().startsWith(q);
+  });
+
+  diag('Search "'+val+'": '+results.length+' results from '+members.length+' members');
+
+  var box = document.getElementById('search-results');
+  if (results.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "'+val+'"<br><small>Try last name only, or check the Members list is synced in Settings</small></div>';
+    return;
+  }
+  if (results.length === 1) {
+    // Auto check in if only one result
+    box.style.display = 'none';
+    document.getElementById('manual-input').value = '';
+    checkIn(results[0].id, results[0].firstName+' '+results[0].lastName);
+    return;
+  }
+  // Show list to pick from
+  box.style.display = 'block';
+  box.innerHTML = results.slice(0,6).map(function(m){
+    return '<div class="search-result-item" onclick="selectMember(\''+m.id+'\',\''+m.firstName+' '+m.lastName+'\')">'
+      +'<div><div class="sri-name">'+m.firstName+' '+m.lastName+'</div>'
+      +'<div class="sri-detail">'+(m.tabernacle||'')+(m.tabernacle&&m.ageGroup?' · ':'')+capitalize(m.ageGroup||'')+'</div></div>'
+      +'<button class="sri-btn">Check In</button>'
+      +'</div>';
+  }).join('');
+}
+
+function selectMember(id, name) {
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('manual-input').value = '';
+  checkIn(id, name);
+}
+
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
 
 /* ── CHECK IN ── */
-function renderCheckinList() {
-  var q=(document.getElementById('ci-search').value||'').toLowerCase();
-  var ftab=document.getElementById('ci-filter-tab').value;
-  var fstatus=document.getElementById('ci-filter-status').value;
-  var all = members.filter(function(m){
-    return (m.firstName+' '+m.lastName+' '+(m.tabernacle||'')+' '+m.id).toLowerCase().includes(q)
-      && (!ftab||m.tabernacle===ftab)
-      && (!fstatus||m.checkinStatus===fstatus);
-  });
-  var totalIn = members.filter(function(m){return m.checkinStatus==='checkedin';}).length;
-  document.getElementById('ci-stat-total').textContent=all.length;
-  document.getElementById('ci-stat-in').textContent=totalIn;
-  document.getElementById('ci-stat-out').textContent=members.length-totalIn;
-  var tbody=document.getElementById('ci-tbody');
-  var empty=document.getElementById('ci-empty');
-  if (!all.length){tbody.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  tbody.innerHTML=all.map(function(m){
-    var isIn=m.checkinStatus==='checkedin';
-    var payHasBalance=m.paymentType==='balance';
-    var payTag=payHasBalance?'tag-balance':'tag-paid';
-    var payLbl=payHasBalance?'Balance Due':'Paid in Full';
-    var ciTag=isIn?'tag-in':'tag-pending';
-    var ciLbl=isIn?'Checked In':'Pending';
-    return '<tr>'
-      +'<td><strong>'+m.firstName+' '+m.lastName+'</strong></td>'
-      +'<td><span class="bid">'+m.id+'</span></td>'
-      +'<td>'+(m.tabernacle||'—')+'</td>'
-      +'<td>'+(AGE[m.ageGroup]||'—')+'</td>'
-      +'<td><span class="tag '+payTag+'">'+payLbl+'</span></td>'
-      +'<td><span class="tag '+ciTag+'">'+ciLbl+'</span></td>'
-      +'<td>'+(isIn?'':'<button class="btn-green" style="font-size:11px;padding:5px 12px;" onclick="openCheckinCard(\''+m.id+'\')">Check In</button>')+'</td>'
-      +'</tr>';
+function checkIn(guestId, guestName) {
+  var isTest = currentMeal === 'test' || currentDay === 'TEST';
+  var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
+  var name = guestName || lookupName(guestId);
+
+  if (isTest) {
+    var fakeName = name || guestId;
+    var outcomes = ['ok','ok','ok','already','denied'];
+    var pick = outcomes[Math.floor(Math.random()*outcomes.length)];
+    var msgs = {ok:'Test scan — would approve',already:'Test scan — already used',denied:'Test scan — would deny'};
+    showResult(pick, fakeName, guestId, msgs[pick]);
+    flash(pick==='ok'?'green':pick==='already'?'amber':'red');
+    addLog(pick, fakeName, guestId);
+    return;
+  }
+
+  // Check local scan cache first (instant feedback)
+  var cacheKey = 'scan_'+mealCol;
+  var scans = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+
+  if (!name && members.length === 0) {
+    showResult('denied', guestId, guestId, 'Members not loaded — check Settings');
+    flash('red');
+    addLog('denied', guestId, guestId);
+    stats.blocked++;
+    updateStats();
+    return;
+  }
+
+  if (!name) {
+    showResult('denied', guestId, guestId, 'Member not found in list');
+    flash('red');
+    addLog('denied', guestId, guestId);
+    stats.blocked++;
+    updateStats();
+    return;
+  }
+
+  if (scans[guestId]) {
+    // Already used locally — show immediately, also verify with sheet
+    showResult('already', name, guestId, currentMeal+' already used today');
+    flash('amber');
+    addLog('already', name, guestId);
+    stats.blocked++;
+    updateStats();
+    return;
+  }
+
+  // Mark locally immediately for instant feedback
+  scans[guestId] = new Date().toISOString();
+  localStorage.setItem(cacheKey, JSON.stringify(scans));
+  showResult('ok', name, guestId, 'Enjoy your '+currentMeal+'!');
+  flash('green');
+  addLog('ok', name, guestId);
+  stats.served++;
+  updateStats();
+
+  // Then sync to sheet in background
+  if (scriptURL) {
+    fetch(scriptURL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'scan', guestId:guestId, mealCol:mealCol})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.status === 'already_used') {
+        // Sheet says already used — update our result
+        diag('Sheet: already used for '+guestId);
+      }
+    })
+    .catch(function(e){ diag('Sheet sync error: '+e.message); });
+  }
+}
+
+function lookupName(id) {
+  var m = members.find(function(x){ return x.id === id; });
+  return m ? m.firstName+' '+m.lastName : null;
+}
+
+/* ── UI ── */
+function showResult(type, name, id, detail) {
+  playSound(type);
+  var card = document.getElementById('result-card');
+  card.className = 'result-card '+type;
+  var icons = {ok:'&#10003;',already:'&#9888;',denied:'&#10005;'};
+  var labels = {ok:'Approved',already:'Already Used',denied:'Not Found'};
+  document.getElementById('result-icon').innerHTML = icons[type];
+  document.getElementById('result-label').textContent = labels[type];
+  document.getElementById('result-name').textContent = name||id;
+  document.getElementById('result-detail').textContent = id+' — '+detail;
+  document.getElementById('result-meal').textContent = currentMeal==='breakfast'?'Breakfast':currentMeal==='lunch'?'Lunch':'Test';
+  var dc = DAYS.find(function(d){ return d.key===currentDay; });
+  document.getElementById('result-day').textContent = dc ? dc.label : currentDay;
+  document.getElementById('result-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  card.style.display = 'block';
+  var popup = document.getElementById('scan-popup');
+  popup.className = 'scan-popup '+type;
+  document.getElementById('popup-icon').innerHTML = icons[type];
+  document.getElementById('popup-status').textContent = {ok:'SUCCESS',already:'BLOCKED',denied:'NOT FOUND'}[type];
+  document.getElementById('popup-name').textContent = name||id;
+  document.getElementById('popup-detail').textContent = detail;
+  popup.classList.add('show');
+  if (window._pt) clearTimeout(window._pt);
+  window._pt = setTimeout(dismissPopup, type==='ok'?2200:3500);
+  setTimeout(function(){ if(card.className==='result-card '+type) card.style.display='none'; }, 7000);
+}
+
+function dismissPopup() { document.getElementById('scan-popup').classList.remove('show'); }
+
+function flash(color) {
+  var f = document.getElementById('flash');
+  f.className = 'flash '+color+' show';
+  setTimeout(function(){ f.classList.remove('show'); }, 500);
+}
+
+function addLog(status, name, id) {
+  scanLog.unshift({status:status,name:name,id:id,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if (scanLog.length > 30) scanLog.pop();
+  var list = document.getElementById('log-list');
+  document.getElementById('log-count').textContent = scanLog.length;
+  list.innerHTML = scanLog.map(function(e){
+    return '<div class="log-entry"><div class="log-dot '+e.status+'"></div><div class="log-name">'+e.name+'</div><div class="log-meta">'+e.id+' · '+e.time+'</div></div>';
   }).join('');
 }
 
-function openCheckinCard(id) {
-  var m=members.find(function(x){return x.id===id;});
-  if (!m) return;
-  var hasBalance = m.paymentType==='balance';
-  var balanceWarning = hasBalance
-    ? '<div class="banner banner-red" style="margin-bottom:0;border-radius:0 0 0 0;">&#9888; Balance Due — '+( m.balanceNotes||'amount not specified')+'. Direct to On-Site Registration desk.</div>'
-    : '';
-  var html = '<div class="ci-card">'
-    +'<div class="ci-card-head"><div class="ci-card-name">'+m.firstName+' '+m.lastName+'</div><div class="ci-card-id">ID: '+m.id+'  ·  Registered '+new Date(m.registeredAt).toLocaleDateString()+'</div></div>'
-    + (hasBalance ? '<div style="background:var(--red-bg);border-bottom:1px solid rgba(153,27,27,0.2);padding:12px 22px;font-size:13px;font-weight:700;color:var(--red);">&#9888;  Balance Due — '+(m.balanceNotes||'see notes')+'. Send to On-Site Registration desk.</div>' : '')
-    +'<div class="ci-card-body">'
-    +'<div class="ci-row"><span class="ci-lbl">Tabernacle</span><span class="ci-val">'+(m.tabernacle||'—')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Age Group</span><span class="ci-val">'+(AGE[m.ageGroup]||'—')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Payment</span><span class="ci-val">'+(hasBalance?'<span class="tag tag-balance">Balance Due</span>':'<span class="tag tag-paid">Paid in Full</span>')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Email</span><span class="ci-val">'+(m.email||'—')+'</span></div>'
-    +'<div class="ci-row"><span class="ci-lbl">Phone</span><span class="ci-val">'+(m.phone||'—')+'</span></div>'
-    +'</div>'
-    +'<div class="ci-actions">'
-    + (hasBalance
-        ? '<button class="btn-secondary" onclick="closeCheckinCard()">Close</button><span style="font-size:13px;color:var(--red);font-weight:700;">&#8594; Direct to On-Site Registration desk</span>'
-        : '<button class="btn-secondary" onclick="closeCheckinCard()">Cancel</button><button class="btn-green" onclick="confirmCheckin(\''+m.id+'\')">&#10003;  Confirm Check In + Hand Over Package</button>'
-      )
-    +'</div></div>';
-  document.getElementById('ci-member-card').innerHTML=html;
-  document.getElementById('ci-member-card').style.display='block';
-  document.getElementById('ci-member-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+function updateStats() {
+  document.getElementById('stat-served').textContent = stats.served;
+  document.getElementById('stat-blocked').textContent = stats.blocked;
 }
 
-function closeCheckinCard() {
-  document.getElementById('ci-member-card').style.display='none';
+function diag(msg) {
+  var box = document.getElementById('diag-box');
+  var ts = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  box.textContent = '['+ts+'] '+msg+'\n'+(box.textContent||'');
+  if (box.textContent.length > 800) box.textContent = box.textContent.substring(0,800);
+  // Show diag box only in test mode
+  if (currentMeal === 'test') box.classList.add('show');
 }
 
-function confirmCheckin(id) {
-  var m=members.find(function(x){return x.id===id;});
-  if (!m) return;
-  m.checkinStatus='checkedin';
-  saveMembers();
-  syncCheckin(id);
-  closeCheckinCard();
-  renderCheckinList();
-  showToast(m.firstName+' '+m.lastName+' checked in!');
-}
-
-/* ── MEMBER LIST ── */
-function renderMemberList() {
-  var q=(document.getElementById('ml-search').value||'').toLowerCase();
-  var ftab=document.getElementById('ml-filter-tab').value;
-  var fpay=document.getElementById('ml-filter-pay').value;
-  var fci=document.getElementById('ml-filter-ci').value;
-  var filtered=members.filter(function(m){
-    return (m.firstName+' '+m.lastName+' '+(m.tabernacle||'')+' '+m.id).toLowerCase().includes(q)
-      &&(!ftab||m.tabernacle===ftab)&&(!fpay||m.paymentType===fpay)&&(!fci||m.checkinStatus===fci);
-  });
-  document.getElementById('total-count').textContent=members.length;
-  var tbody=document.getElementById('ml-tbody');
-  var empty=document.getElementById('ml-empty');
-  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  tbody.innerHTML=filtered.map(function(m){
-    var payTag=m.paymentType==='balance'?'tag-balance':'tag-paid';
-    var payLbl=m.paymentType==='balance'?'Balance Due':'Paid in Full';
-    var ciTag=m.checkinStatus==='checkedin'?'tag-in':'tag-pending';
-    var ciLbl=m.checkinStatus==='checkedin'?'Checked In':'Pending';
-    return '<tr>'
-      +'<td><strong>'+m.firstName+' '+m.lastName+'</strong></td>'
-      +'<td><span class="bid">'+m.id+'</span></td>'
-      +'<td>'+(m.tabernacle||'—')+'</td>'
-      +'<td>'+(AGE[m.ageGroup]||'—')+'</td>'
-      +'<td><span class="tag '+payTag+'">'+payLbl+'</span></td>'
-      +'<td><span class="tag '+ciTag+'">'+ciLbl+'</span></td>'
-      +'<td style="font-size:12px;color:var(--muted)">'+(m.email||'—')+'</td>'
-      +'<td style="font-size:12px;color:var(--muted)">'+(m.phone||'—')+'</td>'
-      +'<td><button class="btn-danger" onclick="removeMember(\''+m.id+'\')">Remove</button></td>'
-      +'</tr>';
-  }).join('');
-}
-
-function removeMember(id) {
-  if (!confirm('Remove this member?')) return;
-  members=members.filter(function(m){return m.id!==id;});
-  saveMembers(); renderMemberList();
-}
-
-/* ── BADGES ── */
-function makeBadgeHTML(m) {
-  var html='<div class="id-card">';
-  html+='<div class="id-top"><div class="id-org"><div class="id-org-name">COGASOC</div><div class="id-org-sub">Passover Event Pass</div></div><div class="id-gold-bar"></div></div>';
-  html+='<div class="id-arc"></div>';
-  html+='<div class="id-body">';
-  html+='<div class="id-qr" id="BQR-'+m.id+'"></div>';
-  html+='<div class="id-info">';
-  html+='<div class="id-name">'+m.firstName+' '+m.lastName+'</div>';
-  html+='<div class="id-id">ID: '+m.id+'</div>';
-  html+='<div class="id-badges">';
-  html+='<div class="id-badge gold">'+(m.tabernacle||'—')+'</div>';
-  html+='<div class="id-badge">'+(AGE[m.ageGroup]||'—')+'</div>';
-  html+='</div></div></div>';
-  html+='<div class="id-footer"><div class="id-footer-txt">COGASOC</div><div class="id-footer-txt">Passover 2025</div></div>';
-  html+='</div>';
-  return html;
-}
-
-function renderBadgesIntoGrid(list, gridId) {
-  var grid=document.getElementById(gridId);
-  if (!grid) return;
-  grid.innerHTML='';
-  list.forEach(function(m){
-    var wrap=document.createElement('div');
-    wrap.innerHTML=makeBadgeHTML(m);
-    grid.appendChild(wrap);
-    setTimeout(function(){
-      var el=document.getElementById('BQR-'+m.id);
-      if(!el) return;
-      new QRCode(el,{text:JSON.stringify({id:m.id,name:m.firstName+' '+m.lastName,tab:m.tabernacle}),width:64,height:64,colorDark:'#1B2E4B',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.M});
-    },80);
-  });
-}
-
-function generateAllBadges() {
-  var no=document.getElementById('no-print');
-  if(!members.length){document.getElementById('all-print-grid').innerHTML='';no.style.display='block';return;}
-  no.style.display='none';
-  renderBadgesIntoGrid(members,'all-print-grid');
-}
-
-function getCardStyles() {
-  return '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Nunito:wght@700&display=swap" rel="stylesheet">'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Nunito,sans-serif;background:#fff;}'
-    +'.id-card{width:325px;height:205px;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 4px 24px rgba(27,46,75,.22);border:1px solid rgba(27,46,75,.15);background:#fff;page-break-inside:avoid;}'
-    +'.id-top{background:#1B2E4B;height:70px;position:relative;display:flex;align-items:center;padding:0 16px;}'
-    +'.id-arc{position:absolute;bottom:-16px;left:0;right:0;height:32px;background:#1B2E4B;border-radius:0 0 50% 50%;z-index:1;}'
-    +'.id-gold-bar{height:4px;background:#C9991A;position:absolute;bottom:0;left:0;right:0;}'
-    +'.id-org{z-index:2;}.id-org-name{font-family:"Cormorant Garamond",Georgia,serif;color:#E8B830;font-size:20px;font-weight:700;letter-spacing:.05em;}'
-    +'.id-org-sub{font-size:9px;color:rgba(255,255,255,.5);margin-top:3px;letter-spacing:.1em;text-transform:uppercase;}'
-    +'.id-body{padding:24px 14px 10px;display:flex;gap:12px;align-items:center;}'
-    +'.id-qr{flex-shrink:0;background:#fff;border:1.5px solid #EBF0F7;border-radius:6px;padding:3px;}'
-    +'.id-info{flex:1;min-width:0;}'
-    +'.id-name{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;color:#1B2E4B;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
-    +'.id-id{font-size:9px;color:#A8835A;font-family:monospace;margin-top:2px;font-weight:700;}'
-    +'.id-badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}'
-    +'.id-badge{background:#EBF0F7;border-radius:5px;padding:3px 8px;font-size:8px;font-weight:700;color:#2A4570;text-transform:uppercase;letter-spacing:.05em;}'
-    +'.id-badge.gold{background:#FDF6E3;color:#7A5C3A;}'
-    +'.id-footer{position:absolute;bottom:0;left:0;right:0;height:24px;background:#FDF6E3;border-top:1px solid rgba(201,153,26,.2);display:flex;align-items:center;justify-content:space-between;padding:0 12px;}'
-    +'.id-footer-txt{font-size:8px;color:#7A5C3A;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}'
-    +'@media print{@page{margin:6mm;}}</style>';
-}
-
-function printSingleBadge() {
-  var badge=document.getElementById('preview-badge');
-  var w=window.open('','_blank','width=440,height=320');
-  var pageStyle='@page{size:3.375in 2.125in;margin:0;}body{margin:0;padding:0;background:#fff;display:flex;align-items:center;justify-content:center;width:3.375in;height:2.125in;overflow:hidden;}';
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardStyles()+'<style>'+pageStyle+'</style></head><body>'+badge.outerHTML+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<'+'/scr'+'ipt></body></html>');
-  w.document.close();
-}
-
-function printGridBadges(gridId) {
-  var grid=document.getElementById(gridId);
-  if(!grid||!grid.children.length){showToast('No cards to print.');return;}
-  var w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+getCardStyles()+'<style>.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;padding:8mm;}</style></head><body><div class="grid">'+grid.innerHTML+'</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},700);}<'+'/scr'+'ipt></body></html>');
-  w.document.close();
-}
-
-function openDigitalBadge() {
-  var id=document.getElementById('d-id').textContent;
-  var name=document.getElementById('d-name').textContent;
-  var base=window.location.href.replace('passover-registration.html','passover-badge.html');
-  window.open(base+'?id='+encodeURIComponent(id)+'&name='+encodeURIComponent(name),'_blank');
-}
-
-function copyDigitalLink() {
-  var id=document.getElementById('d-id').textContent;
-  var name=document.getElementById('d-name').textContent;
-  var base=window.location.href.replace('passover-registration.html','passover-badge.html');
-  var url=base+'?id='+encodeURIComponent(id)+'&name='+encodeURIComponent(name);
-  navigator.clipboard.writeText(url).then(function(){showToast('Link copied! Send this to the member.');}).catch(function(){prompt('Copy this link:',url);});
-}
-
-/* ── BULK IMPORT ── */
-function runBulkImport() {
-  var raw=document.getElementById('import-text').value.trim();
-  if(!raw){showToast('Paste some names first.');return;}
-  var lines=raw.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-  var imported=[];
-  lines.forEach(function(line){
-    var fn,ln,email='',phone='',tab='';
-    if(line.includes(',')) {
-      var p=line.split(',').map(function(x){return x.trim();});
-      fn=p[0];ln=p[1]||'';email=p[2]||'';phone=p[3]||'';tab=p[4]||'';
+function playSound(type) {
+  try {
+    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    if (type==='ok') {
+      o.frequency.setValueAtTime(520,ctx.currentTime);
+      o.frequency.setValueAtTime(780,ctx.currentTime+0.12);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.35);
+    } else if (type==='already') {
+      o.frequency.setValueAtTime(440,ctx.currentTime);
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.15);
+      var o2=ctx.createOscillator(),g2=ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.frequency.setValueAtTime(440,ctx.currentTime+0.2);
+      g2.gain.setValueAtTime(0.3,ctx.currentTime+0.2);
+      g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+      o2.start(ctx.currentTime+0.2); o2.stop(ctx.currentTime+0.35);
     } else {
-      var si=line.indexOf(' ');
-      fn=si===-1?line:line.slice(0,si); ln=si===-1?'':line.slice(si+1);
+      o.frequency.setValueAtTime(300,ctx.currentTime);
+      o.frequency.setValueAtTime(180,ctx.currentTime+0.2);
+      g.gain.setValueAtTime(0.35,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.45);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.45);
     }
-    if(!fn) return;
-    var m={id:generateID(),firstName:fn,lastName:ln,email:email,phone:phone,tabernacle:tab,ageGroup:'adult',paymentType:'full',balanceNotes:'',checkinStatus:'pending',notes:'Bulk import',registeredAt:new Date().toISOString()};
-    imported.push(m); members.push(m); syncToSheet(m);
-  });
-  saveMembers();
-  document.getElementById('import-status').textContent=imported.length+' members imported';
-  document.getElementById('import-count').textContent=imported.length;
-  document.getElementById('import-preview').style.display='block';
-  renderBadgesIntoGrid(imported,'import-grid');
-  showToast(imported.length+' members imported!');
+  } catch(e) {}
 }
-
-/* ── SHEET SYNC ── */
-async function syncToSheet(m) {
-  if(!sheetURL) return;
-  try{await fetch(sheetURL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'register',guest:m})});}
-  catch(e){console.warn('Sync failed',e);}
-}
-async function syncCheckin(id) {
-  if(!sheetURL) return;
-  try{await fetch(sheetURL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'checkin',guestId:id})});}
-  catch(e){console.warn('Checkin sync failed',e);}
-}
-function saveSheetURL(){
-  sheetURL=document.getElementById('sheet-url-input').value.trim();
-  localStorage.setItem('passover_sheet_url',sheetURL);
-  var csvInp=document.getElementById('csv-url-input');
-  if(csvInp){ csvURL=csvInp.value.trim(); localStorage.setItem('passover_csv_url',csvURL); }
-  updateSheetStatus();
-  showToast('URLs saved!');
-  if(csvURL||sheetURL) fetchFromSheet(function(){ renderMemberList(); renderCheckinList(); });
-}
-function updateSheetStatus(){
-  var el=document.getElementById('sheet-url-status');
-  if(!el)return;
-  if(csvURL) el.textContent='CSV connected: '+csvURL.substring(0,55)+'...';
-  else if(sheetURL) el.textContent='Script connected: '+sheetURL.substring(0,55)+'...';
-  else el.textContent='Not connected — data saved locally only.';
-}
-function saveMembers(){localStorage.setItem('cogasoc_members',JSON.stringify(members));}
-
-function exportCSV(){
-  if(!members.length){showToast('No members to export.');return;}
-  var h=['ID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
-  var rows=members.map(function(m){return [m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt,m.notes||''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');});
-  var csv=[h.join(',')].concat(rows).join('\n');
-  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
-}
-
-function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
 </script>
 </body>
 </html>
