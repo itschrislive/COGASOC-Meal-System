@@ -256,22 +256,22 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
 
 <script>
 var DAYS = [
-  {key:'TEST', label:'TEST DAY', date:'test'},
+  {key:'TEST',label:'TEST DAY',date:'test'},
   {key:'Mar31',label:'Mar 31',date:'2025-03-31'},
-  {key:'Apr1', label:'Apr 1', date:'2025-04-01'},
-  {key:'Apr2', label:'Apr 2', date:'2025-04-02'},
-  {key:'Apr3', label:'Apr 3', date:'2025-04-03'},
-  {key:'Apr4', label:'Apr 4', date:'2025-04-04'},
-  {key:'Apr5', label:'Apr 5', date:'2025-04-05'},
-  {key:'Apr6', label:'Apr 6', date:'2025-04-06'},
-  {key:'Apr7', label:'Apr 7', date:'2025-04-07'},
-  {key:'Apr8', label:'Apr 8', date:'2025-04-08'}
+  {key:'Apr1',label:'Apr 1',date:'2025-04-01'},
+  {key:'Apr2',label:'Apr 2',date:'2025-04-02'},
+  {key:'Apr3',label:'Apr 3',date:'2025-04-03'},
+  {key:'Apr4',label:'Apr 4',date:'2025-04-04'},
+  {key:'Apr5',label:'Apr 5',date:'2025-04-05'},
+  {key:'Apr6',label:'Apr 6',date:'2025-04-06'},
+  {key:'Apr7',label:'Apr 7',date:'2025-04-07'},
+  {key:'Apr8',label:'Apr 8',date:'2025-04-08'}
 ];
 
 var scriptURL = localStorage.getItem('passover_sheet_url') || '';
 var csvURL = localStorage.getItem('passover_csv_url') || '';
 var currentMeal = 'breakfast';
-var currentDay = autoDay();
+var currentDay = 'Mar31';
 var scanning = false;
 var videoStream = null;
 var scanCanvas = document.createElement('canvas');
@@ -287,154 +287,121 @@ window.addEventListener('DOMContentLoaded', function() {
   buildDayBar();
   var hr = new Date().getHours();
   setMeal(hr >= 11 ? 'lunch' : 'breakfast');
-  if (scriptURL || csvURL) {
-    document.getElementById('setup-overlay').style.display = 'none';
-    document.getElementById('setup-script-url').value = scriptURL;
-    document.getElementById('setup-csv-url').value = csvURL;
-    loadMembers();
-  }
-  document.getElementById('manual-input').addEventListener('keydown', function(e){
+  document.getElementById('setup-script-url').value = scriptURL;
+  document.getElementById('setup-csv-url').value = csvURL;
+  document.getElementById('manual-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doSearch();
   });
-  document.getElementById('manual-input').addEventListener('input', function(){
+  document.getElementById('manual-input').addEventListener('input', function() {
     if (!this.value.trim()) document.getElementById('search-results').style.display = 'none';
   });
+  if (csvURL || scriptURL) loadMembers();
+  else showSync('error', 'Tap Settings to enter your sheet URLs');
 });
 
-function autoDay() {
-  var today = new Date().toISOString().slice(0,10);
-  var d = DAYS.find(function(x){ return x.date === today; });
-  return d ? d.key : 'Mar31';
-}
-
 function buildDayBar() {
+  var today = new Date().toISOString().slice(0,10);
   var bar = document.getElementById('day-bar');
   DAYS.forEach(function(d) {
     var chip = document.createElement('div');
+    var isToday = d.date === today;
+    currentDay = isToday ? d.key : currentDay;
     chip.className = 'day-chip' + (d.key === currentDay ? ' active' : '');
     chip.textContent = d.label;
     chip.onclick = function() {
       currentDay = d.key;
-      document.querySelectorAll('.day-chip').forEach(function(c){ c.classList.remove('active'); });
+      document.querySelectorAll('.day-chip').forEach(function(c) { c.classList.remove('active'); });
       chip.classList.add('active');
     };
     bar.appendChild(chip);
   });
 }
 
-/* -- LOAD MEMBERS FROM SHEET -- */
+/* LOAD MEMBERS */
 function loadMembers() {
+  if (!csvURL && !scriptURL) { showSync('error', 'No URLs - tap Settings'); return; }
   showSync('loading', 'Loading members...');
-
-  // Try CSV first (fastest, no auth needed)
   if (csvURL) {
     var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
-    var url = csvURL + sep + 'cachebust=' + Date.now();
-    fetch(url)
-      .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.text();
-      })
+    fetch(csvURL + sep + 't=' + Date.now())
+      .then(function(r) { return r.text(); })
       .then(function(text) {
-        var parsed = parseCSV(text);
-        if (parsed.length > 1) {
-          var headers = parsed[0].map(function(h) { return h.trim(); });
-          members = parsed.slice(1).map(function(row) {
+        // Strip BOM, normalize line endings
+        text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        var rows = parseCSV(text);
+        diag('CSV rows: ' + rows.length + ' | Headers: ' + (rows[0] ? rows[0].slice(0,5).join('|') : 'none'));
+        if (rows.length > 1) {
+          var hdrs = rows[0].map(function(h) { return h.replace(/^\uFEFF/,'').replace(/[\r\n"]/g,'').trim(); });
+          var loaded = [];
+          for (var i = 1; i < rows.length; i++) {
+            var row = rows[i];
             var o = {};
-            headers.forEach(function(h, i) { o[h] = (row[i] || '').trim(); });
-            return {
-              id: o.GuestID || o.ID || '',
-              firstName: o.FirstName || o['First Name'] || '',
-              lastName: o.LastName || o['Last Name'] || '',
+            hdrs.forEach(function(h, idx) { o[h] = (row[idx] || '').replace(/[\r\n]/g,'').trim(); });
+            var id = o.GuestID || o.ID || o['Guest ID'] || '';
+            var fn = o.FirstName || o['First Name'] || '';
+            var ln = o.LastName || o['Last Name'] || '';
+            if (id && fn) loaded.push({
+              id: id, firstName: fn, lastName: ln,
               tabernacle: o.Tabernacle || '',
               ageGroup: (o.AgeGroup || '').toLowerCase(),
               paymentType: (o.PaymentType || '').toLowerCase(),
               checkinStatus: (o.CheckinStatus || 'pending').toLowerCase()
-            };
-          }).filter(function(m) { return m.id && m.firstName; });
+            });
+          }
+          members = loaded;
           document.getElementById('stat-total').textContent = members.length;
-          showSync('ok', members.length + ' members loaded');
-          diag('CSV OK: ' + members.length + ' members. First: ' + (members[0] ? members[0].firstName : 'none'));
-          if (callback_after_load) { callback_after_load(); callback_after_load = null; }
+          if (members.length > 0) {
+            showSync('ok', members.length + ' members loaded');
+            diag('Loaded: ' + members.length + ' | First: ' + members[0].firstName + ' ' + members[0].lastName + ' | ID: ' + members[0].id);
+          } else {
+            showSync('error', '0 members - GuestID column may be empty');
+            diag('0 members. Headers: ' + hdrs.join('|'));
+            if (scriptURL) loadViaScript();
+          }
         } else {
-          showSync('error', 'CSV empty - check sheet is published');
-          diag('CSV empty or header only');
-          tryScriptLoad();
+          showSync('error', 'CSV empty');
+          diag('CSV empty. Length: ' + text.length + ' First 100: ' + text.substring(0,100));
+          if (scriptURL) loadViaScript();
         }
       })
       .catch(function(e) {
-        diag('CSV failed: ' + e.message + ' - trying script...');
-        tryScriptLoad();
+        diag('CSV failed: ' + e.message);
+        if (scriptURL) loadViaScript();
+        else showSync('error', 'Cannot load CSV: ' + e.message);
       });
   } else {
-    tryScriptLoad();
+    loadViaScript();
   }
 }
 
-var callback_after_load = null;
-
-function tryScriptLoad() {
-  if (!scriptURL) {
-    showSync('error', 'No URLs set - tap Settings');
-    return;
-  }
-  showSync('loading', 'Trying script endpoint...');
+function loadViaScript() {
+  showSync('loading', 'Loading via script...');
   fetch(scriptURL + '?t=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.guests && data.guests.length > 0) {
         members = data.guests.map(function(g) {
           return {
-            id: g.GuestID || '',
-            firstName: g.FirstName || '',
-            lastName: g.LastName || '',
-            tabernacle: g.Tabernacle || '',
-            ageGroup: (g.AgeGroup || '').toLowerCase(),
-            paymentType: (g.PaymentType || '').toLowerCase(),
-            checkinStatus: (g.CheckinStatus || 'pending').toLowerCase()
+            id: String(g.GuestID || '').trim(),
+            firstName: String(g.FirstName || '').trim(),
+            lastName: String(g.LastName || '').trim(),
+            tabernacle: String(g.Tabernacle || '').trim(),
+            ageGroup: String(g.AgeGroup || '').toLowerCase().trim(),
+            paymentType: String(g.PaymentType || '').toLowerCase().trim(),
+            checkinStatus: String(g.CheckinStatus || 'pending').toLowerCase().trim()
           };
         }).filter(function(m) { return m.id && m.firstName; });
         document.getElementById('stat-total').textContent = members.length;
-        showSync('ok', members.length + ' members loaded via script');
-        diag('Script OK: ' + members.length + ' members');
-        if (callback_after_load) { callback_after_load(); callback_after_load = null; }
+        showSync('ok', members.length + ' members loaded');
+        diag('Script loaded: ' + members.length + ' members');
       } else {
-        showSync('error', 'No members found in sheet');
-        diag('Script returned no guests');
+        showSync('error', 'No members in sheet');
+        diag('Script: no guests. Response: ' + JSON.stringify(data).substring(0,100));
       }
     })
     .catch(function(e) {
-      showSync('error', 'Cannot reach sheet: ' + e.message);
+      showSync('error', 'Cannot reach sheet');
       diag('Script failed: ' + e.message);
-    });
-}
-
-function loadMembersViaScript() {
-  fetch(scriptURL + '?t=' + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (data.guests && data.guests.length > 0) {
-        members = data.guests.map(function(g){
-          return {
-            id: g.GuestID || '',
-            firstName: g.FirstName || '',
-            lastName: g.LastName || '',
-            tabernacle: g.Tabernacle || '',
-            ageGroup: g.AgeGroup || '',
-            paymentType: g.PaymentType || '',
-            checkinStatus: g.CheckinStatus || 'pending'
-          };
-        }).filter(function(m){ return m.id && m.firstName; });
-        document.getElementById('stat-total').textContent = members.length;
-        showSync('ok', members.length + ' members loaded via script');
-        diag('Script loaded: ' + members.length + ' members');
-      } else {
-        showSync('error', 'No members found in sheet');
-      }
-    })
-    .catch(function(e){
-      showSync('error', 'Cannot reach sheet: ' + e.message);
-      diag('Script FAIL: ' + e.message);
     });
 }
 
@@ -459,22 +426,21 @@ function parseCSV(text) {
 
 function showSync(type, msg) {
   var bar = document.getElementById('sync-bar');
+  if (!bar) return;
   bar.textContent = msg;
   bar.className = 'sync-bar show ' + type;
-  if (type === 'ok') setTimeout(function(){ bar.classList.remove('show'); }, 3000);
+  if (type === 'ok') setTimeout(function() { bar.classList.remove('show'); }, 4000);
 }
 
-/* -- SETUP -- */
+/* SETUP */
 function saveSetup() {
   scriptURL = document.getElementById('setup-script-url').value.trim();
   csvURL = document.getElementById('setup-csv-url').value.trim();
   localStorage.setItem('passover_sheet_url', scriptURL);
   localStorage.setItem('passover_csv_url', csvURL);
-  document.getElementById('setup-status').textContent = 'Saved! Loading...';
+  document.getElementById('setup-status').textContent = 'Saved! Loading members...';
   loadMembers();
-  setTimeout(function() {
-    document.getElementById('setup-overlay').style.display = 'none';
-  }, 2000);
+  setTimeout(function() { document.getElementById('setup-overlay').style.display = 'none'; }, 2500);
 }
 function skipSetup() { document.getElementById('setup-overlay').style.display = 'none'; }
 function showSettings() {
@@ -484,69 +450,43 @@ function showSettings() {
   document.getElementById('setup-overlay').style.display = 'flex';
 }
 
-/* -- MEAL / DAY -- */
+/* MEAL / DAY */
 function setMeal(meal) {
   currentMeal = meal;
   var isTest = meal === 'test';
-  document.getElementById('btn-b').className = 'meal-btn' + (meal==='breakfast'?' active':'');
-  document.getElementById('btn-l').className = 'meal-btn' + (meal==='lunch'?' active':'');
-  document.getElementById('btn-t').className = 'meal-btn' + (isTest?' test-active':'');
+  document.getElementById('btn-b').className = 'meal-btn' + (meal==='breakfast' ? ' active' : '');
+  document.getElementById('btn-l').className = 'meal-btn' + (meal==='lunch' ? ' active' : '');
+  document.getElementById('btn-t').className = 'meal-btn' + (isTest ? ' test-active' : '');
   document.getElementById('test-banner').classList.toggle('show', isTest);
   document.getElementById('scanner-wrap').style.borderColor = isTest ? '#6366F1' : 'var(--navy2)';
+  if (isTest) document.getElementById('diag-box').classList.add('show');
+  else document.getElementById('diag-box').classList.remove('show');
 }
 
-/* -- CAMERA -- */
-function toggleCamera() {
-  if (scanning) stopCamera(); else startCamera();
-}
+/* CAMERA */
+function toggleCamera() { if (scanning) stopCamera(); else startCamera(); }
 
 function startCamera() {
   var video = document.getElementById('camera-video');
-
-  // iOS Safari requires specific constraints
-  var constraints = {
-    video: {
-      facingMode: 'environment',
-      width: { ideal: 1280, max: 1920 },
-      height: { ideal: 720, max: 1080 }
-    }
-  };
-
+  var constraints = {video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}};
   navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
       videoStream = stream;
-      video.setAttribute('playsinline', '');
-      video.setAttribute('autoplay', '');
-      video.setAttribute('muted', '');
+      video.setAttribute('playsinline','');
       video.srcObject = stream;
-
-      // iOS needs explicit play() call
-      var playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.then(function() {
-          onCameraReady(video);
-        }).catch(function(e) {
-          diag('play() error: ' + e.message);
-          // Try anyway
-          onCameraReady(video);
-        });
-      } else {
-        setTimeout(function() { onCameraReady(video); }, 500);
-      }
+      video.play().then(function() { onCameraReady(video); })
+        .catch(function() { onCameraReady(video); });
     })
     .catch(function(e) {
-      diag('Camera error: ' + e.message);
-      // Try with basic constraints as fallback
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({video:true})
         .then(function(stream) {
           videoStream = stream;
+          video.setAttribute('playsinline','');
           video.srcObject = stream;
-          video.play().then(function() { onCameraReady(video); }).catch(function() { onCameraReady(video); });
+          video.play().then(function() { onCameraReady(video); })
+            .catch(function() { onCameraReady(video); });
         })
-        .catch(function(e2) {
-          alert('Camera access denied. Please allow camera access in your browser settings, then try again.');
-          diag('Camera fallback failed: ' + e2.message);
-        });
+        .catch(function() { alert('Camera access denied. Use manual lookup.'); });
     });
 }
 
@@ -556,24 +496,19 @@ function onCameraReady(video) {
   scanning = true;
   document.getElementById('scan-toggle').textContent = 'Stop Camera';
   document.getElementById('scan-toggle').classList.add('scanning');
-  // Wait for video to have dimensions before scanning
   var attempts = 0;
-  var waitForVideo = setInterval(function() {
+  var wait = setInterval(function() {
     attempts++;
-    if (video.videoWidth > 0) {
-      clearInterval(waitForVideo);
-      diag('Video ready: ' + video.videoWidth + 'x' + video.videoHeight);
-      scanInterval = setInterval(scanFrame, 200);
-    } else if (attempts > 30) {
-      clearInterval(waitForVideo);
-      diag('Video dimensions never came - starting scan anyway');
+    if (video.videoWidth > 0 || attempts > 20) {
+      clearInterval(wait);
+      diag('Camera ready: ' + video.videoWidth + 'x' + video.videoHeight);
       scanInterval = setInterval(scanFrame, 200);
     }
   }, 100);
 }
 
 function stopCamera() {
-  if (videoStream) videoStream.getTracks().forEach(function(t){ t.stop(); });
+  if (videoStream) videoStream.getTracks().forEach(function(t) { t.stop(); });
   videoStream = null;
   clearInterval(scanInterval);
   scanning = false;
@@ -591,205 +526,148 @@ function scanFrame() {
   scanCanvas.width = video.videoWidth;
   scanCanvas.height = video.videoHeight;
   scanCtx.drawImage(video, 0, 0);
-  var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-  var code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'});
+  var img = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+  var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
   if (code && code.data) {
     var now = Date.now();
     if (code.data !== lastId || now - lastTime > 4000) {
       lastId = code.data;
       lastTime = now;
-      diag('QR detected: ' + code.data.substring(0,50));
+      diag('QR: ' + code.data.substring(0,60));
       processQR(code.data);
     }
   }
 }
 
-/* -- PROCESSING -- */
-function processQR(qrText) {
-  var guestId, guestName;
-  try {
-    var p = JSON.parse(qrText);
-    guestId = p.id; guestName = p.name;
-  } catch(e) {
-    guestId = qrText.trim().toUpperCase();
-  }
-  checkIn(guestId, guestName);
+/* PROCESSING */
+function processQR(raw) {
+  var id, name;
+  try { var p = JSON.parse(raw); id = p.id; name = p.name; }
+  catch(e) { id = raw.trim().toUpperCase(); }
+  checkIn(id, name);
 }
 
-/* -- MANUAL SEARCH -- */
+/* MANUAL SEARCH */
 function doSearch() {
   var val = document.getElementById('manual-input').value.trim();
   if (!val) return;
   var q = val.toLowerCase();
-  var results = [];
-
-  // Search local members first
-  results = members.filter(function(m) {
-    var full = (m.firstName+' '+m.lastName).toLowerCase();
-    var id = m.id.toLowerCase();
-    return full.includes(q) || id.includes(q) ||
-           m.firstName.toLowerCase().startsWith(q) ||
-           m.lastName.toLowerCase().startsWith(q);
+  var results = members.filter(function(m) {
+    return (m.firstName + ' ' + m.lastName + ' ' + m.id).toLowerCase().includes(q)
+      || m.firstName.toLowerCase().startsWith(q)
+      || m.lastName.toLowerCase().startsWith(q);
   });
-
-  diag('Search "'+val+'": '+results.length+' results from '+members.length+' members');
-
+  diag('Search "' + val + '": ' + results.length + ' of ' + members.length);
   var box = document.getElementById('search-results');
-  if (results.length === 0) {
+  if (!results.length) {
     box.style.display = 'block';
-    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "'+val+'"<br><small>Try last name only, or check the Members list is synced in Settings</small></div>';
+    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "' + val + '"<br><small>Make sure members are loaded in Settings</small></div>';
     return;
   }
   if (results.length === 1) {
-    // Auto check in if only one result
     box.style.display = 'none';
     document.getElementById('manual-input').value = '';
-    checkIn(results[0].id, results[0].firstName+' '+results[0].lastName);
+    checkIn(results[0].id, results[0].firstName + ' ' + results[0].lastName);
     return;
   }
-  // Show list to pick from
   box.style.display = 'block';
-  box.innerHTML = results.slice(0,6).map(function(m){
-    return '<div class="search-result-item" onclick="selectMember(\''+m.id+'\',\''+m.firstName+' '+m.lastName+'\')">'
-      +'<div><div class="sri-name">'+m.firstName+' '+m.lastName+'</div>'
-      +'<div class="sri-detail">'+(m.tabernacle||'')+(m.tabernacle&&m.ageGroup?' . ':'')+capitalize(m.ageGroup||'')+'</div></div>'
-      +'<button class="sri-btn">Check In</button>'
-      +'</div>';
+  box.innerHTML = results.slice(0,8).map(function(m) {
+    var nameStr = m.firstName + ' ' + m.lastName;
+    var detail = (m.tabernacle || '') + (m.tabernacle && m.ageGroup ? ' - ' : '') + (m.ageGroup ? m.ageGroup.charAt(0).toUpperCase() + m.ageGroup.slice(1) : '');
+    return '<div class="search-result-item" data-id="' + m.id + '" data-name="' + nameStr + '">'
+      + '<div><div class="sri-name">' + nameStr + '</div><div class="sri-detail">' + detail + '</div></div>'
+      + '<button class="sri-btn">Check In</button></div>';
   }).join('');
+  box.querySelectorAll('.search-result-item').forEach(function(item) {
+    item.onclick = function() {
+      box.style.display = 'none';
+      document.getElementById('manual-input').value = '';
+      checkIn(item.dataset.id, item.dataset.name);
+    };
+  });
 }
 
-function selectMember(id, name) {
-  document.getElementById('search-results').style.display = 'none';
-  document.getElementById('manual-input').value = '';
-  checkIn(id, name);
-}
-
-function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
-
-/* -- CHECK IN -- */
+/* CHECK IN */
 function checkIn(guestId, guestName) {
   var isTest = currentMeal === 'test' || currentDay === 'TEST';
   var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
   var name = guestName || lookupName(guestId);
-
   if (isTest) {
-    var fakeName = name || guestId;
     var outcomes = ['ok','ok','ok','already','denied'];
-    var pick = outcomes[Math.floor(Math.random()*outcomes.length)];
-    var msgs = {ok:'Test scan - would approve',already:'Test scan - already used',denied:'Test scan - would deny'};
-    showResult(pick, fakeName, guestId, msgs[pick]);
-    flash(pick==='ok'?'green':pick==='already'?'amber':'red');
-    addLog(pick, fakeName, guestId);
+    var pick = outcomes[Math.floor(Math.random() * outcomes.length)];
+    showResult(pick, name || guestId, guestId, {ok:'Test - would approve', already:'Test - already used', denied:'Test - would deny'}[pick]);
+    flash(pick === 'ok' ? 'green' : pick === 'already' ? 'amber' : 'red');
+    addLog(pick, name || guestId, guestId);
     return;
   }
-
-  // Check local scan cache first (instant feedback)
-  var cacheKey = 'scan_'+mealCol;
-  var scans = JSON.parse(localStorage.getItem(cacheKey) || '{}');
-
-  if (!name && members.length === 0) {
-    showResult('denied', guestId, guestId, 'Members not loaded - check Settings');
-    flash('red');
-    addLog('denied', guestId, guestId);
-    stats.blocked++;
-    updateStats();
-    return;
-  }
-
   if (!name) {
-    showResult('denied', guestId, guestId, 'Member not found in list');
-    flash('red');
-    addLog('denied', guestId, guestId);
-    stats.blocked++;
-    updateStats();
-    return;
+    var msg = members.length === 0 ? 'Members not loaded - check Settings' : 'Member not found';
+    showResult('denied', guestId, guestId, msg);
+    flash('red'); addLog('denied', guestId, guestId); stats.blocked++; updateStats(); return;
   }
-
+  var cacheKey = 'scan_' + mealCol;
+  var scans = JSON.parse(localStorage.getItem(cacheKey) || '{}');
   if (scans[guestId]) {
-    // Already used locally - show immediately, also verify with sheet
-    showResult('already', name, guestId, currentMeal+' already used today');
-    flash('amber');
-    addLog('already', name, guestId);
-    stats.blocked++;
-    updateStats();
-    return;
+    showResult('already', name, guestId, currentMeal + ' already used today');
+    flash('amber'); addLog('already', name, guestId); stats.blocked++; updateStats(); return;
   }
-
-  // Mark locally immediately for instant feedback
   scans[guestId] = new Date().toISOString();
   localStorage.setItem(cacheKey, JSON.stringify(scans));
-  showResult('ok', name, guestId, 'Enjoy your '+currentMeal+'!');
-  flash('green');
-  addLog('ok', name, guestId);
-  stats.served++;
-  updateStats();
-
-  // Then sync to sheet in background
+  showResult('ok', name, guestId, 'Enjoy your ' + currentMeal + '!');
+  flash('green'); addLog('ok', name, guestId); stats.served++; updateStats();
   if (scriptURL) {
-    fetch(scriptURL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'scan', guestId:guestId, mealCol:mealCol})
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if (data.status === 'already_used') {
-        // Sheet says already used - update our result
-        diag('Sheet: already used for '+guestId);
-      }
-    })
-    .catch(function(e){ diag('Sheet sync error: '+e.message); });
+    fetch(scriptURL, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'scan', guestId: guestId, mealCol: mealCol})})
+      .catch(function(e) { diag('Sync error: ' + e.message); });
   }
 }
 
 function lookupName(id) {
-  var m = members.find(function(x){ return x.id === id; });
-  return m ? m.firstName+' '+m.lastName : null;
+  var m = members.find(function(x) { return x.id === id; });
+  return m ? m.firstName + ' ' + m.lastName : null;
 }
 
-/* -- UI -- */
+/* UI */
 function showResult(type, name, id, detail) {
   playSound(type);
   var card = document.getElementById('result-card');
-  card.className = 'result-card '+type;
-  var icons = {ok:'V',already:'!',denied:'X'};
-  var labels = {ok:'Approved',already:'Already Used',denied:'Not Found'};
-  document.getElementById('result-icon').innerHTML = icons[type];
+  card.className = 'result-card ' + type;
+  var icons = {ok:'checkmark',already:'!!',denied:'X'};
+  var labels = {ok:'Approved', already:'Already Used', denied:'Not Found'};
+  document.getElementById('result-icon').textContent = icons[type];
   document.getElementById('result-label').textContent = labels[type];
-  document.getElementById('result-name').textContent = name||id;
-  document.getElementById('result-detail').textContent = id+' - '+detail;
-  document.getElementById('result-meal').textContent = currentMeal==='breakfast'?'Breakfast':currentMeal==='lunch'?'Lunch':'Test';
-  var dc = DAYS.find(function(d){ return d.key===currentDay; });
+  document.getElementById('result-name').textContent = name || id;
+  document.getElementById('result-detail').textContent = id + ' - ' + detail;
+  document.getElementById('result-meal').textContent = currentMeal === 'breakfast' ? 'Breakfast' : currentMeal === 'lunch' ? 'Lunch' : 'Test';
+  var dc = DAYS.find(function(d) { return d.key === currentDay; });
   document.getElementById('result-day').textContent = dc ? dc.label : currentDay;
-  document.getElementById('result-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('result-time').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   card.style.display = 'block';
   var popup = document.getElementById('scan-popup');
-  popup.className = 'scan-popup '+type;
-  document.getElementById('popup-icon').innerHTML = icons[type];
-  document.getElementById('popup-status').textContent = {ok:'SUCCESS',already:'BLOCKED',denied:'NOT FOUND'}[type];
-  document.getElementById('popup-name').textContent = name||id;
+  popup.className = 'scan-popup ' + type;
+  document.getElementById('popup-icon').textContent = icons[type];
+  document.getElementById('popup-status').textContent = {ok:'SUCCESS', already:'BLOCKED', denied:'NOT FOUND'}[type];
+  document.getElementById('popup-name').textContent = name || id;
   document.getElementById('popup-detail').textContent = detail;
   popup.classList.add('show');
   if (window._pt) clearTimeout(window._pt);
-  window._pt = setTimeout(dismissPopup, type==='ok'?2200:3500);
-  setTimeout(function(){ if(card.className==='result-card '+type) card.style.display='none'; }, 7000);
+  window._pt = setTimeout(dismissPopup, type === 'ok' ? 2200 : 3500);
 }
-
 function dismissPopup() { document.getElementById('scan-popup').classList.remove('show'); }
 
 function flash(color) {
   var f = document.getElementById('flash');
-  f.className = 'flash '+color+' show';
-  setTimeout(function(){ f.classList.remove('show'); }, 500);
+  f.className = 'flash ' + color + ' show';
+  setTimeout(function() { f.classList.remove('show'); }, 500);
 }
 
 function addLog(status, name, id) {
-  scanLog.unshift({status:status,name:name,id:id,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  scanLog.unshift({status:status, name:name, id:id, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
   if (scanLog.length > 30) scanLog.pop();
   var list = document.getElementById('log-list');
   document.getElementById('log-count').textContent = scanLog.length;
-  list.innerHTML = scanLog.map(function(e){
-    return '<div class="log-entry"><div class="log-dot '+e.status+'"></div><div class="log-name">'+e.name+'</div><div class="log-meta">'+e.id+' . '+e.time+'</div></div>';
+  list.innerHTML = scanLog.map(function(e) {
+    return '<div class="log-entry"><div class="log-dot ' + e.status + '"></div><div class="log-name">' + e.name + '</div><div class="log-meta">' + e.id + ' ' + e.time + '</div></div>';
   }).join('');
 }
 
@@ -800,41 +678,40 @@ function updateStats() {
 
 function diag(msg) {
   var box = document.getElementById('diag-box');
+  if (!box) return;
   var ts = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  box.textContent = '['+ts+'] '+msg+'\n'+(box.textContent||'');
-  if (box.textContent.length > 800) box.textContent = box.textContent.substring(0,800);
-  // Show diag box only in test mode
-  if (currentMeal === 'test') box.classList.add('show');
+  box.textContent = '[' + ts + '] ' + msg + '\n' + (box.textContent || '');
+  if (box.textContent.length > 1200) box.textContent = box.textContent.substring(0,1200);
 }
 
 function playSound(type) {
   try {
-    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.connect(g); g.connect(ctx.destination);
-    if (type==='ok') {
-      o.frequency.setValueAtTime(520,ctx.currentTime);
-      o.frequency.setValueAtTime(780,ctx.currentTime+0.12);
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.35);
-    } else if (type==='already') {
-      o.frequency.setValueAtTime(440,ctx.currentTime);
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
-      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.15);
-      var o2=ctx.createOscillator(),g2=ctx.createGain();
+    if (type === 'ok') {
+      o.frequency.setValueAtTime(520, ctx.currentTime);
+      o.frequency.setValueAtTime(780, ctx.currentTime + 0.12);
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.35);
+    } else if (type === 'already') {
+      o.frequency.setValueAtTime(440, ctx.currentTime);
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.15);
+      var o2 = ctx.createOscillator(), g2 = ctx.createGain();
       o2.connect(g2); g2.connect(ctx.destination);
-      o2.frequency.setValueAtTime(440,ctx.currentTime+0.2);
-      g2.gain.setValueAtTime(0.3,ctx.currentTime+0.2);
-      g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-      o2.start(ctx.currentTime+0.2); o2.stop(ctx.currentTime+0.35);
+      o2.frequency.setValueAtTime(440, ctx.currentTime + 0.2);
+      g2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      o2.start(ctx.currentTime + 0.2); o2.stop(ctx.currentTime + 0.35);
     } else {
-      o.frequency.setValueAtTime(300,ctx.currentTime);
-      o.frequency.setValueAtTime(180,ctx.currentTime+0.2);
-      g.gain.setValueAtTime(0.35,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.45);
-      o.start(ctx.currentTime); o.stop(ctx.currentTime+0.45);
+      o.frequency.setValueAtTime(300, ctx.currentTime);
+      o.frequency.setValueAtTime(180, ctx.currentTime + 0.2);
+      g.gain.setValueAtTime(0.35, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.45);
     }
   } catch(e) {}
 }
