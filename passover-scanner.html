@@ -748,11 +748,14 @@ function checkIn(guestId, guestName) {
   var name = guestName || lookupName(guestId);
   diag('checkIn: id=' + guestId + ' name=' + (name||'NOT FOUND') + ' members=' + members.length + ' test=' + isTest);
   if (isTest) {
+    // In test mode - show real popup with real name if found, random outcome
     var outcomes = ['ok','ok','ok','already','denied'];
     var pick = outcomes[Math.floor(Math.random() * outcomes.length)];
-    showResult(pick, name || guestId, guestId, {ok:'Test - would approve', already:'Test - already used', denied:'Test - would deny'}[pick]);
+    var testName = name || guestId;
+    var testMsgs = {ok:'Test scan - approved!', already:'Test scan - already used today', denied:'Test scan - not found'};
+    showResult(pick, testName, guestId, testMsgs[pick]);
     flash(pick === 'ok' ? 'green' : pick === 'already' ? 'amber' : 'red');
-    addLog(pick, name || guestId, guestId);
+    addLog(pick, testName, guestId);
     return;
   }
   if (!name) {
