@@ -733,8 +733,8 @@ function showCardResult(m) {
   document.getElementById('d-phone').textContent = m.phone || '--';
   document.getElementById('d-notes').textContent = m.notes || '--';
   var qc = document.getElementById('qr-small'); qc.innerHTML = '';
-  new QRCode(qc, {text: JSON.stringify({id: m.id, name: m.firstName + ' ' + m.lastName, tab: m.tabernacle}),
-    width: 68, height: 68, colorDark: '#1B2E4B', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M});
+  new QRCode(qc, {text: m.id,
+    width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
   document.getElementById('card-result').scrollIntoView({behavior: 'smooth', block: 'nearest'});
   showToast(m.firstName + ' registered!');
 }
@@ -909,8 +909,8 @@ function renderBadgesInGrid(list, gridId) {
     setTimeout(function() {
       var el = document.getElementById('BQR-' + m.id);
       if (!el) return;
-      new QRCode(el, {text: JSON.stringify({id: m.id, name: m.firstName + ' ' + m.lastName, tab: m.tabernacle}),
-        width: 64, height: 64, colorDark: '#1B2E4B', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M});
+      new QRCode(el, {text: m.id,
+        width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
     }, 80);
   });
 }
@@ -951,8 +951,8 @@ function reprintSingle(m) {
   var badgeEl = tmp.querySelector('.id-card');
   var qrEl = tmp.querySelector('.id-qr');
   if (qrEl) {
-    new QRCode(qrEl, {text: JSON.stringify({id: m.id, name: m.firstName + ' ' + m.lastName, tab: m.tabernacle}),
-      width: 68, height: 68, colorDark: '#1B2E4B', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M});
+    new QRCode(qrEl, {text: m.id,
+      width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
   }
   setTimeout(function() {
     var css = getCardCSS();
