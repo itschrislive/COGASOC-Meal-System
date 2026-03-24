@@ -615,10 +615,48 @@ function onCameraReady(video) {
     if (video.videoWidth > 0 || attempts > 20) {
       clearInterval(wait);
       diag('Camera ready: ' + video.videoWidth + 'x' + video.videoHeight);
-      scanInterval = setInterval(scanFrame, 200);
+      // Try native BarcodeDetector first (iPhone/Android native speed)
+      if (window.BarcodeDetector) {
+        BarcodeDetector.getSupportedFormats().then(function(formats) {
+          if (formats.indexOf('qr_code') >= 0) {
+            window._barcodeDetector = new BarcodeDetector({formats: ['qr_code']});
+            diag('Native BarcodeDetector ready - tap Scan Meal Card');
+            scanInterval = setInterval(scanFrameNative, 150);
+          } else {
+            diag('BarcodeDetector no QR support - using jsQR');
+            scanInterval = setInterval(scanFrame, 200);
+          }
+        }).catch(function() {
+          diag('Using jsQR fallback');
+          scanInterval = setInterval(scanFrame, 200);
+        });
+      } else {
+        diag('Using jsQR (no native API)');
+        scanInterval = setInterval(scanFrame, 200);
+      }
     }
   }, 100);
 }
+
+function scanFrameNative() {
+  var video = document.getElementById('camera-video');
+  if (!video.videoWidth || !scanning || !window._barcodeDetector) return;
+  window._barcodeDetector.detect(video)
+    .then(function(codes) {
+      if (codes.length > 0) {
+        var now = Date.now();
+        var data = codes[0].rawValue;
+        if (data !== lastId || now - lastTime > 4000) {
+          lastId = data;
+          lastTime = now;
+          diag('Native auto-scan: ' + data.substring(0,60));
+          processQR(data);
+        }
+      }
+    })
+    .catch(function() {});
+}
+
 
 function stopCamera() {
   if (videoStream) videoStream.getTracks().forEach(function(t) { t.stop(); });
@@ -664,48 +702,89 @@ function scanFrame() {
   }
 }
 
-// Manual triggered scan - user taps button when card is lined up
+// Manual triggered scan - uses native BarcodeDetector if available
 function triggerScan() {
   var video = document.getElementById('camera-video');
-  if (!scanning || !video.videoWidth) {
-    showToastScanner('Start the camera first!');
+  if (!scanning) {
+    startCamera();
+    setTimeout(function() { triggerScan(); }, 1500);
     return;
   }
   var btn = document.getElementById('scan-btn');
   if (btn) { btn.textContent = 'Scanning...'; btn.style.background = '#92400E'; }
-  
+
+  // Use native BarcodeDetector for instant result
+  if (window._barcodeDetector) {
+    var nativeAttempts = 0;
+    var nativeTry = setInterval(function() {
+      nativeAttempts++;
+      window._barcodeDetector.detect(video)
+        .then(function(codes) {
+          if (codes.length > 0) {
+            clearInterval(nativeTry);
+            resetScanBtn();
+            diag('Native tap-scan: ' + codes[0].rawValue.substring(0,60));
+            processQR(codes[0].rawValue);
+          } else if (nativeAttempts >= 20) {
+            clearInterval(nativeTry);
+            resetScanBtn();
+            showToastScanner('Hold card steady and try again');
+          }
+        })
+        .catch(function() {
+          clearInterval(nativeTry);
+          resetScanBtn();
+        });
+    }, 150);
+    return;
+  }
+
   var attempts = 0;
+  var found = false;
   var scanTry = setInterval(function() {
+    if (found) return;
     attempts++;
     var vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw || !vh) { 
-      if (attempts > 15) { 
-        clearInterval(scanTry); 
+    if (!vw || !vh) return;
+
+    // Try multiple crop regions for best chance
+    var regions = [
+      [0, 0, vw, vh],                                          // full frame
+      [vw*0.1, vh*0.1, vw*0.8, vh*0.8],                       // 80% center
+      [vw*0.2, vh*0.2, vw*0.6, vh*0.6],                       // 60% center
+      [vw*0.05, vh*0.3, vw*0.5, vh*0.5]                       // left half
+    ];
+
+    for (var ri = 0; ri < regions.length; ri++) {
+      var r = regions[ri];
+      var cw = Math.floor(r[2]), ch = Math.floor(r[3]);
+      if (cw < 10 || ch < 10) continue;
+      scanCanvas.width = cw;
+      scanCanvas.height = ch;
+      scanCtx.drawImage(video, Math.floor(r[0]), Math.floor(r[1]), cw, ch, 0, 0, cw, ch);
+      var img = scanCtx.getImageData(0, 0, cw, ch);
+      var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+      if (code && code.data) {
+        found = true;
+        clearInterval(scanTry);
         resetScanBtn();
+        diag('Scan found (region ' + ri + ' attempt ' + attempts + '): ' + code.data.substring(0,60));
+        processQR(code.data);
+        return;
       }
-      return;
     }
-    scanCanvas.width = vw; scanCanvas.height = vh;
-    scanCtx.drawImage(video, 0, 0, vw, vh);
-    var img = scanCtx.getImageData(0, 0, vw, vh);
-    var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
-    if (!code) {
-      var cx=Math.floor(vw*0.1), cy=Math.floor(vh*0.1), cw=Math.floor(vw*0.8), ch=Math.floor(vh*0.8);
-      scanCanvas.width=cw; scanCanvas.height=ch;
-      scanCtx.drawImage(video,cx,cy,cw,ch,0,0,cw,ch);
-      var img2=scanCtx.getImageData(0,0,cw,ch);
-      code=jsQR(img2.data,img2.width,img2.height,{inversionAttempts:'attemptBoth'});
-    }
-    if (code && code.data) {
+
+    if (attempts >= 30) { // 3 seconds
       clearInterval(scanTry);
       resetScanBtn();
-      diag('Tap-scan QR: ' + code.data.substring(0,60));
-      processQR(code.data);
-    } else if (attempts >= 10) {
-      clearInterval(scanTry);
-      resetScanBtn();
-      showToastScanner('No QR code found - hold card steady and try again');
-      diag('Tap-scan: no QR after ' + attempts + ' attempts');
+      showToastScanner('Hold card steady inside the brackets and tap Scan again');
+      diag('No QR after 30 attempts');
+    } else {
+      // Update button with countdown feel
+      if (btn && attempts % 5 === 0) {
+        var dots = '.'.repeat(Math.floor(attempts/5) % 4);
+        btn.textContent = 'Scanning' + dots;
+      }
     }
   }, 100);
 }
