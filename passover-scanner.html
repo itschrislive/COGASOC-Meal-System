@@ -806,15 +806,31 @@ function showToastScanner(msg) {
 function processQR(raw) {
   var id, name;
   raw = raw.trim();
-  // Try JSON first (old format)
+  if (!raw) return;
+  // Flash the sync bar so we know scan fired
+  showSync('ok', 'QR Read! Processing...');
+
+  // Parse QR data
   if (raw.charAt(0) === '{') {
     try { var p = JSON.parse(raw); id = p.id; name = p.name; }
     catch(e) { id = raw.toUpperCase(); }
   } else {
-    // Plain ID (new format - just the PS code)
     id = raw.toUpperCase();
   }
-  diag('processQR: raw=' + raw.substring(0,30) + ' id=' + id);
+
+  if (!id) { diag('processQR: empty id from raw=' + raw.substring(0,30)); return; }
+
+  // Always look up full name from member list (same as manual search)
+  var member = members.find(function(m) { return m.id === id; });
+  if (member) {
+    name = member.firstName + ' ' + member.lastName;
+  }
+
+  diag('processQR: id=' + id + ' member=' + (member ? member.firstName : 'NOT FOUND') + ' total=' + members.length);
+
+  // Simulate exactly what happens when you tap Check In from search
+  document.getElementById('manual-input').value = '';
+  document.getElementById('search-results').style.display = 'none';
   checkIn(id, name);
 }
 
@@ -889,6 +905,7 @@ function checkIn(guestId, guestName) {
   var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
   var name = guestName || lookupName(guestId);
   diag('checkIn: id=' + guestId + ' name=' + (name||'NOT FOUND') + ' members=' + members.length + ' test=' + isTest);
+  if (navigator.vibrate) navigator.vibrate(100);
   if (isTest) {
     // In test mode - show real popup with real name if found, random outcome
     var outcomes = ['ok','ok','ok','already','denied'];
