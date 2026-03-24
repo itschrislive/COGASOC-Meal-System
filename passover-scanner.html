@@ -253,6 +253,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
     <button class="ctrl-btn" onclick="showSettings()">Settings</button>
     <button class="ctrl-btn" onclick="dumpMembers()" style="background:var(--navy);color:var(--gold2);font-size:11px;">Debug</button>
   </div>
+  <button id="scan-btn" onclick="triggerScan()" style="width:100%;padding:18px;margin-bottom:14px;background:var(--navy);color:var(--gold2);border:3px solid var(--gold);border-radius:12px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;cursor:pointer;letter-spacing:0.05em;display:none;">SCAN MEAL CARD</button>
 
   <div class="manual-section">
     <h3>Manual Lookup - Search by Name or ID</h3>
@@ -606,6 +607,8 @@ function onCameraReady(video) {
   scanning = true;
   document.getElementById('scan-toggle').textContent = 'Stop Camera';
   document.getElementById('scan-toggle').classList.add('scanning');
+  var sb = document.getElementById('scan-btn');
+  if (sb) sb.style.display = 'block';
   var attempts = 0;
   var wait = setInterval(function() {
     attempts++;
@@ -628,6 +631,8 @@ function stopCamera() {
   document.getElementById('scanner-placeholder').style.display = 'flex';
   document.getElementById('scan-toggle').textContent = 'Start Camera';
   document.getElementById('scan-toggle').classList.remove('scanning');
+  var sb = document.getElementById('scan-btn');
+  if (sb) sb.style.display = 'none';
 }
 
 function scanFrame() {
@@ -635,16 +640,14 @@ function scanFrame() {
   if (!video.videoWidth || !video.videoHeight) return;
   var vw = video.videoWidth;
   var vh = video.videoHeight;
-  // Scan full frame
   scanCanvas.width = vw;
   scanCanvas.height = vh;
   scanCtx.drawImage(video, 0, 0, vw, vh);
   var img = scanCtx.getImageData(0, 0, vw, vh);
   var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
-  // If not found, try center crop (faster, better for close-up cards)
   if (!code) {
-    var cx = Math.floor(vw * 0.2), cy = Math.floor(vh * 0.2);
-    var cw = Math.floor(vw * 0.6), ch = Math.floor(vh * 0.6);
+    var cx = Math.floor(vw * 0.15), cy = Math.floor(vh * 0.15);
+    var cw = Math.floor(vw * 0.7), ch = Math.floor(vh * 0.7);
     scanCanvas.width = cw; scanCanvas.height = ch;
     scanCtx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch);
     var img2 = scanCtx.getImageData(0, 0, cw, ch);
@@ -655,10 +658,69 @@ function scanFrame() {
     if (code.data !== lastId || now - lastTime > 4000) {
       lastId = code.data;
       lastTime = now;
-      diag('QR detected: ' + code.data.substring(0, 80));
+      diag('QR: ' + code.data.substring(0,60));
       processQR(code.data);
     }
   }
+}
+
+// Manual triggered scan - user taps button when card is lined up
+function triggerScan() {
+  var video = document.getElementById('camera-video');
+  if (!scanning || !video.videoWidth) {
+    showToastScanner('Start the camera first!');
+    return;
+  }
+  var btn = document.getElementById('scan-btn');
+  if (btn) { btn.textContent = 'Scanning...'; btn.style.background = '#92400E'; }
+  
+  var attempts = 0;
+  var scanTry = setInterval(function() {
+    attempts++;
+    var vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) { 
+      if (attempts > 15) { 
+        clearInterval(scanTry); 
+        resetScanBtn();
+      }
+      return;
+    }
+    scanCanvas.width = vw; scanCanvas.height = vh;
+    scanCtx.drawImage(video, 0, 0, vw, vh);
+    var img = scanCtx.getImageData(0, 0, vw, vh);
+    var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+    if (!code) {
+      var cx=Math.floor(vw*0.1), cy=Math.floor(vh*0.1), cw=Math.floor(vw*0.8), ch=Math.floor(vh*0.8);
+      scanCanvas.width=cw; scanCanvas.height=ch;
+      scanCtx.drawImage(video,cx,cy,cw,ch,0,0,cw,ch);
+      var img2=scanCtx.getImageData(0,0,cw,ch);
+      code=jsQR(img2.data,img2.width,img2.height,{inversionAttempts:'attemptBoth'});
+    }
+    if (code && code.data) {
+      clearInterval(scanTry);
+      resetScanBtn();
+      diag('Tap-scan QR: ' + code.data.substring(0,60));
+      processQR(code.data);
+    } else if (attempts >= 10) {
+      clearInterval(scanTry);
+      resetScanBtn();
+      showToastScanner('No QR code found - hold card steady and try again');
+      diag('Tap-scan: no QR after ' + attempts + ' attempts');
+    }
+  }, 100);
+}
+
+function resetScanBtn() {
+  var btn = document.getElementById('scan-btn');
+  if (btn) { btn.textContent = 'SCAN MEAL CARD'; btn.style.background = ''; }
+}
+
+function showToastScanner(msg) {
+  var bar = document.getElementById('sync-bar');
+  if (!bar) return;
+  bar.textContent = msg;
+  bar.className = 'sync-bar show error';
+  setTimeout(function() { bar.classList.remove('show'); }, 3000);
 }
 
 /* PROCESSING */
@@ -791,7 +853,7 @@ function showResult(type, name, id, detail) {
   playSound(type);
   var card = document.getElementById('result-card');
   card.className = 'result-card ' + type;
-  var icons = {ok:'checkmark',already:'!!',denied:'X'};
+  var icons = {ok:'OK',already:'!!',denied:'X'};
   var labels = {ok:'Approved', already:'Already Used', denied:'Not Found'};
   document.getElementById('result-icon').textContent = icons[type];
   document.getElementById('result-label').textContent = labels[type];
