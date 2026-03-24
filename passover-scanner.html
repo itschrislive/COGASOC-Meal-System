@@ -253,7 +253,11 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
     <button class="ctrl-btn" onclick="showSettings()">Settings</button>
     <button class="ctrl-btn" onclick="dumpMembers()" style="background:var(--navy);color:var(--gold2);font-size:11px;">Debug</button>
   </div>
-  <button id="scan-btn" onclick="triggerScan()" style="width:100%;padding:18px;margin-bottom:14px;background:var(--navy);color:var(--gold2);border:3px solid var(--gold);border-radius:12px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;cursor:pointer;letter-spacing:0.05em;display:none;">SCAN MEAL CARD</button>
+  <button id="scan-btn" onclick="triggerScan()" style="width:100%;padding:18px;margin-bottom:8px;background:var(--navy);color:var(--gold2);border:3px solid var(--gold);border-radius:12px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;cursor:pointer;letter-spacing:0.05em;display:none;">SCAN MEAL CARD</button>
+  <label id="photo-scan-btn" style="width:100%;padding:12px;margin-bottom:14px;background:var(--white);color:var(--navy);border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.03em;display:none;text-align:center;box-sizing:border-box;">
+    OR take a photo of the card (uses native camera)
+    <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="scanFromPhoto(this)">
+  </label>
 
   <div class="manual-section">
     <h3>Manual Lookup - Search by Name or ID</h3>
@@ -678,26 +682,35 @@ function scanFrame() {
   if (!video.videoWidth || !video.videoHeight) return;
   var vw = video.videoWidth;
   var vh = video.videoHeight;
-  scanCanvas.width = vw;
-  scanCanvas.height = vh;
-  scanCtx.drawImage(video, 0, 0, vw, vh);
-  var img = scanCtx.getImageData(0, 0, vw, vh);
-  var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
-  if (!code) {
-    var cx = Math.floor(vw * 0.15), cy = Math.floor(vh * 0.15);
-    var cw = Math.floor(vw * 0.7), ch = Math.floor(vh * 0.7);
-    scanCanvas.width = cw; scanCanvas.height = ch;
-    scanCtx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch);
-    var img2 = scanCtx.getImageData(0, 0, cw, ch);
-    code = jsQR(img2.data, img2.width, img2.height, {inversionAttempts:'attemptBoth'});
-  }
-  if (code && code.data) {
-    var now = Date.now();
-    if (code.data !== lastId || now - lastTime > 4000) {
-      lastId = code.data;
-      lastTime = now;
-      diag('QR: ' + code.data.substring(0,60));
-      processQR(code.data);
+
+  // Try multiple scales and contrast boosts
+  var attempts = [
+    [0, 0, vw, vh, 1.0],
+    [vw*0.1, vh*0.1, vw*0.8, vh*0.8, 1.0],
+    [0, 0, vw, vh, 2.0],           // high contrast
+    [vw*0.1, vh*0.1, vw*0.8, vh*0.8, 2.0],
+  ];
+
+  for (var ai = 0; ai < attempts.length; ai++) {
+    var a = attempts[ai];
+    var cw = Math.floor(a[2]), ch = Math.floor(a[3]);
+    if (cw < 10 || ch < 10) continue;
+    scanCanvas.width = cw;
+    scanCanvas.height = ch;
+    scanCtx.filter = a[4] > 1 ? 'contrast(' + a[4] + ') brightness(1.1)' : 'none';
+    scanCtx.drawImage(video, Math.floor(a[0]), Math.floor(a[1]), cw, ch, 0, 0, cw, ch);
+    scanCtx.filter = 'none';
+    var img = scanCtx.getImageData(0, 0, cw, ch);
+    var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+    if (code && code.data) {
+      var now = Date.now();
+      if (code.data !== lastId || now - lastTime > 4000) {
+        lastId = code.data;
+        lastTime = now;
+        diag('QR found (pass ' + ai + '): ' + code.data.substring(0,60));
+        processQR(code.data);
+        return;
+      }
     }
   }
 }
@@ -792,6 +805,37 @@ function triggerScan() {
 function resetScanBtn() {
   var btn = document.getElementById('scan-btn');
   if (btn) { btn.textContent = 'SCAN MEAL CARD'; btn.style.background = ''; }
+}
+
+function scanFromPhoto(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var img = new Image();
+  var url = URL.createObjectURL(file);
+  img.onload = function() {
+    var c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    var data = ctx.getImageData(0, 0, c.width, c.height);
+    var code = jsQR(data.data, data.width, data.height, {inversionAttempts:'attemptBoth'});
+    if (!code) {
+      ctx.filter = 'contrast(2) brightness(1.1)';
+      ctx.drawImage(img, 0, 0);
+      ctx.filter = 'none';
+      data = ctx.getImageData(0, 0, c.width, c.height);
+      code = jsQR(data.data, data.width, data.height, {inversionAttempts:'attemptBoth'});
+    }
+    URL.revokeObjectURL(url);
+    if (code && code.data) {
+      diag('Photo scan: ' + code.data.substring(0,60));
+      processQR(code.data);
+    } else {
+      showToastScanner('Could not read QR - try better lighting or manual lookup');
+    }
+    input.value = '';
+  };
+  img.src = url;
 }
 
 function showToastScanner(msg) {
