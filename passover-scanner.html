@@ -251,6 +251,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);color:var(--text);}
   <div class="controls">
     <button class="ctrl-btn" id="scan-toggle" onclick="toggleCamera()">Start Camera</button>
     <button class="ctrl-btn" onclick="showSettings()">Settings</button>
+    <button class="ctrl-btn" onclick="dumpMembers()" style="background:var(--navy);color:var(--gold2);font-size:11px;">Debug</button>
   </div>
 
   <div class="manual-section">
@@ -832,6 +833,22 @@ function addLog(status, name, id) {
 function updateStats() {
   document.getElementById('stat-served').textContent = stats.served;
   document.getElementById('stat-blocked').textContent = stats.blocked;
+}
+
+function dumpMembers() {
+  if (members.length === 0) { diag('NO MEMBERS LOADED'); return; }
+  var sample = members.slice(0,5).map(function(m) {
+    return m.id + '=' + m.firstName + ' ' + m.lastName;
+  }).join(' | ');
+  diag('MEMBERS[' + members.length + ']: ' + sample);
+  diag('RAW localStorage key: cogasoc_members length=' + (localStorage.getItem('cogasoc_members')||'').length);
+  // Also check if Scott Mitchell exists
+  var scott = members.find(function(m) { return m.firstName === 'Scott' && m.lastName === 'Mitchell'; });
+  diag('Scott Mitchell: ' + (scott ? scott.id : 'NOT IN LIST'));
+  var rachel = members.find(function(m) { return m.firstName === 'Rachel' && m.lastName === 'Scott'; });
+  diag('Rachel Scott: ' + (rachel ? rachel.id : 'NOT IN LIST'));
+  // Show diag box
+  document.getElementById('diag-box').classList.add('show');
 }
 
 function diag(msg) {
