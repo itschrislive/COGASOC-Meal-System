@@ -628,17 +628,29 @@ function stopCamera() {
 function scanFrame() {
   var video = document.getElementById('camera-video');
   if (!video.videoWidth || !video.videoHeight) return;
-  scanCanvas.width = video.videoWidth;
-  scanCanvas.height = video.videoHeight;
-  scanCtx.drawImage(video, 0, 0);
-  var img = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+  var vw = video.videoWidth;
+  var vh = video.videoHeight;
+  // Scan full frame
+  scanCanvas.width = vw;
+  scanCanvas.height = vh;
+  scanCtx.drawImage(video, 0, 0, vw, vh);
+  var img = scanCtx.getImageData(0, 0, vw, vh);
   var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+  // If not found, try center crop (faster, better for close-up cards)
+  if (!code) {
+    var cx = Math.floor(vw * 0.2), cy = Math.floor(vh * 0.2);
+    var cw = Math.floor(vw * 0.6), ch = Math.floor(vh * 0.6);
+    scanCanvas.width = cw; scanCanvas.height = ch;
+    scanCtx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch);
+    var img2 = scanCtx.getImageData(0, 0, cw, ch);
+    code = jsQR(img2.data, img2.width, img2.height, {inversionAttempts:'attemptBoth'});
+  }
   if (code && code.data) {
     var now = Date.now();
     if (code.data !== lastId || now - lastTime > 4000) {
       lastId = code.data;
       lastTime = now;
-      diag('QR: ' + code.data.substring(0,60));
+      diag('QR detected: ' + code.data.substring(0, 80));
       processQR(code.data);
     }
   }
@@ -697,6 +709,7 @@ function checkIn(guestId, guestName) {
   var isTest = currentMeal === 'test' || currentDay === 'TEST';
   var mealCol = (currentMeal === 'breakfast' ? 'B_' : 'L_') + currentDay;
   var name = guestName || lookupName(guestId);
+  diag('checkIn: id=' + guestId + ' name=' + (name||'NOT FOUND') + ' members=' + members.length + ' test=' + isTest);
   if (isTest) {
     var outcomes = ['ok','ok','ok','already','denied'];
     var pick = outcomes[Math.floor(Math.random() * outcomes.length)];
