@@ -308,9 +308,13 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('setup-csv-url').value = csvURL;
   document.getElementById('manual-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doSearch();
+    if (e.key === 'Escape') {
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('manual-input').value = '';
+    }
   });
   document.getElementById('manual-input').addEventListener('input', function() {
-    if (!this.value.trim()) document.getElementById('search-results').style.display = 'none';
+    liveSearch(this.value.trim());
   });
   if (csvURL || scriptURL) loadMembers();
   else showSync('error', 'Tap Settings to enter your sheet URLs');
@@ -659,12 +663,59 @@ function scanFrame() {
 /* PROCESSING */
 function processQR(raw) {
   var id, name;
-  try { var p = JSON.parse(raw); id = p.id; name = p.name; }
-  catch(e) { id = raw.trim().toUpperCase(); }
+  raw = raw.trim();
+  // Try JSON first (old format)
+  if (raw.charAt(0) === '{') {
+    try { var p = JSON.parse(raw); id = p.id; name = p.name; }
+    catch(e) { id = raw.toUpperCase(); }
+  } else {
+    // Plain ID (new format - just the PS code)
+    id = raw.toUpperCase();
+  }
+  diag('processQR: raw=' + raw.substring(0,30) + ' id=' + id);
   checkIn(id, name);
 }
 
 /* MANUAL SEARCH */
+function liveSearch(val) {
+  var box = document.getElementById('search-results');
+  if (!val || val.length < 1) { box.style.display = 'none'; return; }
+  var q = val.toLowerCase();
+  var results = members.filter(function(m) {
+    return m.firstName.toLowerCase().startsWith(q)
+      || m.lastName.toLowerCase().startsWith(q)
+      || (m.firstName + ' ' + m.lastName).toLowerCase().includes(q)
+      || m.id.toLowerCase().includes(q);
+  }).slice(0, 8);
+  if (!results.length) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  box.innerHTML = results.map(function(m) {
+    var nameStr = m.firstName + ' ' + m.lastName;
+    var detail = (m.tabernacle || '') + (m.tabernacle && m.ageGroup ? ' - ' : '') + (m.ageGroup ? m.ageGroup.charAt(0).toUpperCase() + m.ageGroup.slice(1) : '');
+    // Highlight matching part
+    var display = nameStr;
+    var qi = nameStr.toLowerCase().indexOf(q);
+    if (qi >= 0) {
+      display = nameStr.slice(0, qi) + '<strong>' + nameStr.slice(qi, qi + val.length) + '</strong>' + nameStr.slice(qi + val.length);
+    }
+    return '<div class="search-result-item" data-id="' + m.id + '" data-name="' + nameStr + '">'
+      + '<div><div class="sri-name">' + display + '</div>'
+      + '<div class="sri-detail">' + (m.id) + (detail ? '  -  ' + detail : '') + '</div></div>'
+      + '<button class="sri-btn">Check In</button>'
+      + '</div>';
+  }).join('');
+  box.querySelectorAll('.search-result-item').forEach(function(item) {
+    item.onclick = function() {
+      box.style.display = 'none';
+      document.getElementById('manual-input').value = '';
+      checkIn(item.dataset.id, item.dataset.name);
+    };
+  });
+}
+
 function doSearch() {
   var val = document.getElementById('manual-input').value.trim();
   if (!val) return;
@@ -674,11 +725,11 @@ function doSearch() {
       || m.firstName.toLowerCase().startsWith(q)
       || m.lastName.toLowerCase().startsWith(q);
   });
-  diag('Search "' + val + '": ' + results.length + ' of ' + members.length);
+  diag('Search: ' + results.length + ' of ' + members.length + ' for ' + val);
   var box = document.getElementById('search-results');
   if (!results.length) {
     box.style.display = 'block';
-    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "' + val + '"<br><small>Make sure members are loaded in Settings</small></div>';
+    box.innerHTML = '<div style="padding:14px;font-size:13px;color:var(--muted);text-align:center;">No members found for "' + val + '"</div>';
     return;
   }
   if (results.length === 1) {
@@ -687,21 +738,7 @@ function doSearch() {
     checkIn(results[0].id, results[0].firstName + ' ' + results[0].lastName);
     return;
   }
-  box.style.display = 'block';
-  box.innerHTML = results.slice(0,8).map(function(m) {
-    var nameStr = m.firstName + ' ' + m.lastName;
-    var detail = (m.tabernacle || '') + (m.tabernacle && m.ageGroup ? ' - ' : '') + (m.ageGroup ? m.ageGroup.charAt(0).toUpperCase() + m.ageGroup.slice(1) : '');
-    return '<div class="search-result-item" data-id="' + m.id + '" data-name="' + nameStr + '">'
-      + '<div><div class="sri-name">' + nameStr + '</div><div class="sri-detail">' + detail + '</div></div>'
-      + '<button class="sri-btn">Check In</button></div>';
-  }).join('');
-  box.querySelectorAll('.search-result-item').forEach(function(item) {
-    item.onclick = function() {
-      box.style.display = 'none';
-      document.getElementById('manual-input').value = '';
-      checkIn(item.dataset.id, item.dataset.name);
-    };
-  });
+  liveSearch(val);
 }
 
 /* CHECK IN */
