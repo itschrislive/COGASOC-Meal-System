@@ -226,19 +226,19 @@ function buildBadge(id, name, tab, age) {
   if (age) html += '<div class="badge-chip">'+escapeHtml(age)+'</div>';
   html += '</div>';
   html += '</div>';
-  html += '<div class="card-footer">Show QR code at each meal &nbsp;&middot;&nbsp; COGASOC Meal Card</div>';
+  html += '<div class="card-footer">Show this QR code at each meal</div>';
   html += '</div>';
   wrap.innerHTML = html;
 
   // Generate QR
-  var qrData = JSON.stringify({id:id, name:name, tab:tab});
+  var qrData = id; // plain ID matches card QR codes
   new QRCode(document.getElementById('qr-code'), {
     text: qrData,
-    width: 200,
-    height: 200,
-    colorDark: '#1B2E4B',
+    width: 220,
+    height: 220,
+    colorDark: '#000000',
     colorLight: '#FFFFFF',
-    correctLevel: QRCode.CorrectLevel.M
+    correctLevel: QRCode.CorrectLevel.H
   });
 
   document.title = name + ' — COGASOC Badge';
