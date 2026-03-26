@@ -312,18 +312,66 @@ window.addEventListener('DOMContentLoaded', function() {
   setMeal(hr >= 11 ? 'lunch' : 'breakfast');
   document.getElementById('setup-script-url').value = scriptURL;
   document.getElementById('setup-csv-url').value = csvURL;
-  document.getElementById('manual-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') doSearch();
+  var scannerInput = document.getElementById('manual-input');
+  var lastKeypressTime = 0;
+  var hardwareScanBuffer = '';
+  var hardwareScanTimer = null;
+
+  scannerInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      // Clear any pending timer
+      if (hardwareScanTimer) clearTimeout(hardwareScanTimer);
+      doSearch();
+      // Re-focus after search for next scan
+      setTimeout(function() { scannerInput.focus(); scannerInput.value = ''; }, 500);
+    }
     if (e.key === 'Escape') {
       document.getElementById('search-results').style.display = 'none';
-      document.getElementById('manual-input').value = '';
+      scannerInput.value = '';
     }
   });
-  document.getElementById('manual-input').addEventListener('input', function() {
-    liveSearch(this.value.trim());
+
+  scannerInput.addEventListener('input', function() {
+    var val = this.value.trim();
+    var now = Date.now();
+    
+    // Detect hardware scanner: types very fast (< 50ms between chars)
+    var isHardwareScan = (now - lastKeypressTime) < 50 && val.length > 3;
+    lastKeypressTime = now;
+
+    if (isHardwareScan) {
+      // Hardware scanner mode - wait for full code then auto-submit
+      if (hardwareScanTimer) clearTimeout(hardwareScanTimer);
+      hardwareScanTimer = setTimeout(function() {
+        var code = scannerInput.value.trim();
+        if (code.length >= 4) {
+          diag('Hardware scan detected: ' + code);
+          scannerInput.value = code;
+          doSearch();
+          setTimeout(function() { scannerInput.focus(); scannerInput.value = ''; }, 600);
+        }
+      }, 100);
+    } else {
+      // Manual typing - show live search suggestions
+      liveSearch(val);
+    }
+  });
+
+  scannerInput.addEventListener('keypress', function() {
+    lastKeypressTime = Date.now();
+  });
+
+  // Re-focus search box when popup is dismissed
+  document.getElementById('scan-popup').addEventListener('click', function() {
+    setTimeout(function() { scannerInput.focus(); }, 300);
   });
   if (csvURL || scriptURL) loadMembers();
   else showSync('error', 'Tap Settings to enter your sheet URLs');
+  // Auto-focus search box for hardware scanner
+  setTimeout(function() {
+    var inp = document.getElementById('manual-input');
+    if (inp) inp.focus();
+  }, 800);
 });
 
 function buildDayBar() {
@@ -921,6 +969,17 @@ function liveSearch(val) {
 function doSearch() {
   var val = document.getElementById('manual-input').value.trim();
   if (!val) return;
+  // If it looks like a scanned ID (PS + chars), check exact match first
+  if (val.toUpperCase().startsWith('PS') && val.length >= 6) {
+    var exact = members.find(function(m) { return m.id === val.toUpperCase(); });
+    if (exact) {
+      diag('Exact ID match: ' + exact.id);
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('manual-input').value = '';
+      checkIn(exact.id, exact.firstName + ' ' + exact.lastName);
+      return;
+    }
+  }
   var q = val.toLowerCase();
   var results = members.filter(function(m) {
     return (m.firstName + ' ' + m.lastName + ' ' + m.id).toLowerCase().includes(q)
@@ -1014,7 +1073,15 @@ function showResult(type, name, id, detail) {
   if (window._pt) clearTimeout(window._pt);
   window._pt = setTimeout(dismissPopup, type === 'ok' ? 2200 : 3500);
 }
-function dismissPopup() { document.getElementById('scan-popup').classList.remove('show'); }
+function dismissPopup() {
+  document.getElementById('scan-popup').classList.remove('show');
+  // Re-focus for next scan
+  setTimeout(function() {
+    var inp = document.getElementById('manual-input');
+    if (inp) { inp.focus(); inp.value = ''; }
+    document.getElementById('search-results').style.display = 'none';
+  }, 200);
+}
 
 function flash(color) {
   var f = document.getElementById('flash');
