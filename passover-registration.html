@@ -1057,16 +1057,44 @@ function printGridBadges(gridId) {
   var css = getCardCSS();
   var style = [
     '@page{size:8.5in 11in;margin:0;}',
-    'body{margin:0;padding:0;}',
-    '.avery-sheet{display:grid;grid-template-columns:3.5in 3.5in;grid-template-rows:repeat(5,2in);padding-top:0.5in;padding-left:0.75in;column-gap:0;row-gap:0;}',
-    '.id-card{width:3.5in!important;height:2in!important;border-radius:0!important;box-shadow:none!important;border:none!important;page-break-inside:avoid;overflow:hidden;}'
+    'html,body{margin:0;padding:0;width:8.5in;height:11in;}',
+    '.avery-sheet{',
+    '  position:absolute;',
+    '  top:0.5in;',
+    '  left:0.75in;',
+    '  width:7in;',
+    '  display:grid;',
+    '  grid-template-columns:3.5in 3.5in;',
+    '  grid-template-rows:repeat(5,2in);',
+    '  column-gap:0;',
+    '  row-gap:0;',
+    '}',
+    '.card-cell{',
+    '  width:3.5in;',
+    '  height:2in;',
+    '  display:flex;',
+    '  align-items:center;',
+    '  justify-content:center;',
+    '  overflow:hidden;',
+    '}',
+    '.id-card{',
+    '  width:3.3in!important;',
+    '  height:1.85in!important;',
+    '  border-radius:8px!important;',
+    '  box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;',
+    '  page-break-inside:avoid;',
+    '  overflow:hidden;',
+    '  transform:scale(1);',
+    '  flex-shrink:0;',
+    '}'
   ].join('');
-  var cards = Array.from(grid.querySelectorAll('.id-card')).map(function(c){return c.outerHTML;});
+  var cards = Array.from(grid.querySelectorAll('.id-card')).map(function(c) {
+    return '<div class="card-cell">' + c.outerHTML + '</div>';
+  });
   var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body><div class="avery-sheet">' + cards.join('') + '<\/div><script>window.onload=function(){setTimeout(function(){window.print();},800);};<\/script></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body><div class="avery-sheet">' + cards.join('') + '<\/div><scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};<\/scr' + 'ipt></body></html>');
   w.document.close();
 }
-
 function openDigital() {
   var id = document.getElementById('d-id').textContent;
   var name = document.getElementById('d-name').textContent;
