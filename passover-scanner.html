@@ -382,7 +382,14 @@ function processScannedValue(raw){
   if(!id)id=raw.trim();
   if(!id){diag('Empty id from: '+raw.substring(0,40));return;}
   var cleanId=id.replace(/[^a-zA-Z0-9]/g,'');
-  var member=members.find(function(m){return m.id===id||m.id===id.toUpperCase()||m.id===cleanId||m.id===cleanId.toUpperCase();});
+  var member=members.find(function(m){
+    return m.id===id
+      ||m.id===id.toUpperCase()
+      ||m.id===cleanId
+      ||m.id===cleanId.toUpperCase()
+      ||m.id.trim()===cleanId
+      ||m.id.replace(/[^a-zA-Z0-9]/g,'')===cleanId;
+  });
   if(member){name=member.firstName+' '+member.lastName;id=member.id;}
   diag('Scan: id='+id+' member='+(member?member.firstName:'NOT FOUND')+' roster='+members.length);
   checkIn(id,name);
@@ -427,7 +434,7 @@ function loadMembers(){
 
 function normaliseRow(m){
   return{
-    id:String(m.id||m.GuestID||'').trim(),
+    id:String(m.id||m.GuestID||'').trim().replace(/[^a-zA-Z0-9]/g,''),
     firstName:String(m.firstName||m.FirstName||'').trim(),
     lastName:String(m.lastName||m.LastName||'').trim(),
     tabernacle:String(m.tabernacle||m.Tabernacle||'').trim(),
@@ -465,7 +472,8 @@ function handleCSVUpload(input){
       var id=o.GuestID||o.ID||o['Guest ID']||o.MemberID||o['Member ID']||o.MemberNumber||o['Member Number']||'';
       var fn=o.FirstName||o['First Name']||'';
       var ln=o.LastName||o['Last Name']||'';
-      if(id&&fn)loaded.push({id:id,firstName:fn,lastName:ln,tabernacle:o.Tabernacle||'',ageGroup:(o.AgeGroup||'').toLowerCase(),paymentType:(o.PaymentType||'').toLowerCase(),checkinStatus:(o.CheckinStatus||'pending').toLowerCase()});
+      var cleanedId=id.replace(/[^a-zA-Z0-9]/g,'');
+      if(cleanedId&&fn)loaded.push({id:cleanedId,firstName:fn,lastName:ln,tabernacle:o.Tabernacle||'',ageGroup:(o.AgeGroup||'').toLowerCase(),paymentType:(o.PaymentType||'').toLowerCase(),checkinStatus:(o.CheckinStatus||'pending').toLowerCase()});
     }
     if(!loaded.length){status.style.color='var(--red)';status.textContent='No members - check ID column';diag('0 members. Headers: '+hdrs.join('|'));return;}
     localStorage.setItem('cogasoc_members',JSON.stringify(loaded));
