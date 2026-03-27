@@ -171,10 +171,11 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
       <input type="text" id="custom-id" placeholder="e.g. PS12345 or leave blank" style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;outline:none;background:#fff;" oninput="lookupExistingMember(this.value)">
     </div>
     <div id="existing-member-hint" style="display:none;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;"></div>
+    <div id="existing-member-results" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;margin-top:6px;overflow:hidden;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(27,46,75,0.1);"></div>
   </div>
   <div class="form-grid">
     <div class="form-group"><label>First Name *</label><input type="text" id="fname" placeholder="Sarah" autocomplete="given-name"></div>
-    <div class="form-group"><label>Last Name *</label><input type="text" id="lname" placeholder="Cohen" autocomplete="family-name"></div>
+    <div class="form-group"><label>Last Name *</label><input type="text" id="lname" placeholder="Cohen" autocomplete="family-name" oninput="searchExistingByName()"></div>
     <div class="form-group"><label>Email</label><input type="email" id="email" placeholder="sarah@example.com"></div>
     <div class="form-group"><label>Phone</label><input type="tel" id="phone" placeholder="(555) 000-0000"></div>
     <div class="form-group"><label>Tabernacle</label><select id="tabernacle"><option value="">-- Select Tabernacle --</option><option>Anchorage</option><option>Alexandria</option><option>Atlanta</option><option>Atlantic City</option><option>Baltimore</option><option>Belleville</option><option>Boston</option><option>Brooklyn</option><option>Charlotte</option><option>Chicago</option><option>Cincinnati</option><option>Cleveland</option><option>Detroit</option><option>Greensboro</option><option>Harrisburg</option><option>Hartford</option><option>Jacksonville</option><option>Los Angeles</option><option>Miami</option><option>Mt. Vernon</option><option>Newark - Plainfield</option><option>Philadelphia</option><option>Providence</option><option>Richmond</option><option>Roanoke</option><option>Rochester</option><option>Salisbury</option><option>Southern Pines</option><option>Washington</option><option>Wilmington</option><option>Zanesville</option></select></div>
@@ -310,7 +311,7 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
     <div><div class="section-title" style="margin-bottom:0;">Admin Dashboard</div><div style="font-size:13px;color:var(--muted);">Live overview of Passover event</div></div>
     <div style="display:flex;gap:8px;">
       <select class="fsel" id="admin-day" onchange="renderAdmin()">
-        <option value="Mar31">Mar 31</option><option value="Apr1">Apr 1</option><option value="Apr2">Apr 2</option>
+        <option value="TEST">TEST DAY</option><option value="Seder">Seder Night</option><option value="Mar31">Mar 31</option><option value="Apr1">Apr 1</option><option value="Apr2">Apr 2</option>
         <option value="Apr3">Apr 3</option><option value="Apr4">Apr 4</option><option value="Apr5">Apr 5</option>
         <option value="Apr6">Apr 6</option><option value="Apr7">Apr 7</option><option value="Apr8">Apr 8</option>
       </select>
@@ -343,7 +344,7 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
   </div>
   <div class="card-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-      <h3 style="margin-bottom:0;">Member Status</h3>
+      <h3 style="margin-bottom:0;">Registration Status</h3>
       <input class="search-bar" type="text" id="adm-search" placeholder="Search..." oninput="renderAdminTable()" style="width:200px;">
     </div>
     <div style="overflow-x:auto;">
@@ -642,6 +643,65 @@ function generateID() {
   var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', id = 'PS';
   for (var i = 0; i < 6; i++) id += c[Math.floor(Math.random() * c.length)];
   return id;
+}
+
+function searchExistingByName() {
+  var fn = (document.getElementById('fname').value || '').trim().toLowerCase();
+  var ln = (document.getElementById('lname').value || '').trim().toLowerCase();
+  var q = (fn + ' ' + ln).trim();
+  var box = document.getElementById('existing-member-results');
+  if (!box) return;
+  if (q.length < 2) { box.style.display = 'none'; return; }
+  var results = members.filter(function(m) {
+    var full = (m.firstName + ' ' + m.lastName).toLowerCase();
+    return full.includes(q) || m.firstName.toLowerCase().startsWith(fn) || m.lastName.toLowerCase().startsWith(ln);
+  }).slice(0, 6);
+  if (!results.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = '';
+  results.forEach(function(m) {
+    var hasBalance = m.paymentType === 'balance';
+    var item = document.createElement('div');
+    item.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
+    item.innerHTML = '<div><span style="font-weight:700;color:var(--navy);">' + m.firstName + ' ' + m.lastName + '</span>'
+      + (hasBalance ? '<span style="background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Balance Due</span>'
+      : '<span style="background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Paid</span>')
+      + '</div><span style="font-size:11px;color:var(--muted);">' + (m.tabernacle || '') + ' - tap to load</span>';
+    item.onclick = (function(mem) { return function() { selectExistingMember(mem.id); }; })(m);
+    box.appendChild(item);
+  });
+}
+function selectExistingMember(id) {
+  var m = members.find(function(x) { return x.id === id; });
+  if (!m) return;
+  document.getElementById('fname').value = m.firstName;
+  document.getElementById('lname').value = m.lastName;
+  document.getElementById('email').value = m.email || '';
+  document.getElementById('phone').value = m.phone || '';
+  document.getElementById('tabernacle').value = m.tabernacle || '';
+  document.getElementById('agegroup').value = m.ageGroup || '';
+  document.getElementById('custom-id').value = m.id;
+  document.getElementById('existing-member-results').style.display = 'none';
+  // Show balance info
+  var hint = document.getElementById('existing-member-hint');
+  if (m.paymentType === 'balance') {
+    hint.style.display = 'block';
+    hint.style.background = 'var(--amber-bg)';
+    hint.style.color = 'var(--amber)';
+    hint.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified') + ' - Select payment type below';
+    // Auto-select balance payment type
+    selPayment = 'balance';
+    document.querySelectorAll('#panel-onsite .pill').forEach(function(p) { p.className = 'pill'; });
+    var balPill = document.querySelector('#panel-onsite .pill[data-val="balance"]');
+    if (balPill) balPill.classList.add('sel-balance');
+    document.getElementById('balance-field').style.display = 'flex';
+  } else {
+    hint.style.display = 'block';
+    hint.style.background = 'var(--green-bg)';
+    hint.style.color = 'var(--green)';
+    hint.textContent = 'Found: ' + m.firstName + ' ' + m.lastName + ' (' + m.tabernacle + ') - Paid in Full';
+  }
+  showToast('Loaded ' + m.firstName + ' ' + m.lastName);
 }
 
 function lookupExistingMember(val) {
@@ -962,20 +1022,19 @@ function reprintSingle(m) {
     var w = window.open('', '_blank', 'width=420,height=340');
     var style = '@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;width:3.5in;height:2in;display:flex;justify-content:center;align-items:center;overflow:hidden;}';
     w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + badgeEl.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();window.close();},600);};<\/script></body></html>');
+
     w.document.close();
-    document.body.removeChild(tmp);
   }, 300);
 }
-
 function getCardCSS() {
   return '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;}'
     + 'body{font-family:Nunito,sans-serif;background:#fff;}'
-    + '.id-card{width:336px;height:192px;border-radius:10px;overflow:hidden;position:relative;font-family:Nunito,sans-serif;box-shadow:0 4px 24px rgba(27,46,75,0.22);border:1px solid rgba(27,46,75,0.15);background:#fff;page-break-inside:avoid;}'
+    + '.id-card{width:3.5in;height:2in;border-radius:0;overflow:hidden;position:relative;font-family:Nunito,sans-serif;background:#fff;page-break-inside:avoid;}'
     + '.id-top{background:#1B2E4B;height:48px;position:relative;display:flex;align-items:center;padding:0 14px;}'
     + '.id-arc{position:absolute;bottom:-10px;left:0;right:0;height:20px;background:#1B2E4B;border-radius:0 0 50% 50%;z-index:1;}'
-    + '.id-gold-bar{height:3px;background:linear-gradient(90deg,#C9991A,#E8B830,#C9991A);position:absolute;bottom:0;left:0;right:0;}'
+    + '.id-gold-bar{height:3px;background:#C9991A;position:absolute;bottom:0;left:0;right:0;}'
     + '.id-org{z-index:2;}'
     + '.id-org-name{font-family:"Cormorant Garamond",Georgia,serif;color:#E8B830;font-size:18px;font-weight:700;letter-spacing:0.05em;line-height:1;}'
     + '.id-org-sub{font-size:8px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.1em;text-transform:uppercase;}'
@@ -984,59 +1043,53 @@ function getCardCSS() {
     + '.id-info{flex:1;min-width:0;}'
     + '.id-name{font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4B;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
     + '.id-id{font-size:9px;color:#A8835A;font-family:monospace;margin-top:3px;font-weight:700;letter-spacing:0.04em;}'
-    + '.id-badges{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}'
-    + '.id-badge{background:#EBF0F7;border-radius:4px;padding:3px 8px;font-size:8px;font-weight:700;color:#2A4570;text-transform:uppercase;letter-spacing:0.04em;}'
+    + '.id-badges{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}'
+    + '.id-badge{background:#EBF0F7;border-radius:4px;padding:3px 8px;font-size:8px;font-weight:700;color:#2A4570;text-transform:uppercase;}'
     + '.id-badge.gold{background:#FDF6E3;color:#7A5C3A;}'
     + '.id-footer{display:none;}'
-    + '.id-footer-txt{display:none;}'
     + '@media print{@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;}}'
     + '</style>';
-}
-
-function printSingleBadge() {
-  var badge = document.getElementById('preview-badge');
-  var css = getCardCSS();
-  var style = '@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;width:3.5in;height:2in;display:flex;justify-content:center;align-items:center;overflow:hidden;}';
-  var w = window.open('', '_blank', 'width=420,height=340');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + badge.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();window.close();},600);};<\/script></body></html>');
-  w.document.close();
 }
 
 function printGridBadges(gridId) {
   var grid = document.getElementById(gridId);
   if (!grid || !grid.children.length) { showToast('No cards to print.'); return; }
   var css = getCardCSS();
-  var style = '.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;padding:0;}@media print{@page{size:letter;margin:0;} .id-card{width:3.5in;height:2in;page-break-inside:avoid;}}';
+  var style = [
+    '@page{size:8.5in 11in;margin:0;}',
+    'body{margin:0;padding:0;}',
+    '.avery-sheet{display:grid;grid-template-columns:3.5in 3.5in;grid-template-rows:repeat(5,2in);padding-top:0.5in;padding-left:0.75in;column-gap:0;row-gap:0;}',
+    '.id-card{width:3.5in!important;height:2in!important;border-radius:0!important;box-shadow:none!important;border:none!important;page-break-inside:avoid;overflow:hidden;}'
+  ].join('');
+  var cards = Array.from(grid.querySelectorAll('.id-card')).map(function(c){return c.outerHTML;});
   var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body><div class="grid">' + grid.innerHTML + '<\/div><script>window.onload=function(){setTimeout(function(){window.print();},700);};<\/script></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body><div class="avery-sheet">' + cards.join('') + '<\/div><script>window.onload=function(){setTimeout(function(){window.print();},800);};<\/script></body></html>');
   w.document.close();
 }
 
 function openDigital() {
   var id = document.getElementById('d-id').textContent;
   var name = document.getElementById('d-name').textContent;
-  var base = window.location.href.replace('passover-registration.html', 'passover-badge.html');
+  var base = window.location.href.replace('passover-registration.html','passover-badge.html');
   window.open(base + '?id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name), '_blank');
 }
 
 function copyLink() {
   var id = document.getElementById('d-id').textContent;
   var name = document.getElementById('d-name').textContent;
-  var base = window.location.href.replace('passover-registration.html', 'passover-badge.html');
+  var base = window.location.href.replace('passover-registration.html','passover-badge.html');
   var url = base + '?id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name);
-  navigator.clipboard.writeText(url).then(function() { showToast('Link copied!'); }).catch(function() { prompt('Copy:', url); });
+  navigator.clipboard.writeText(url).then(function(){showToast('Link copied!');}).catch(function(){prompt('Copy:',url);});
 }
 
-/* MEMBER PROFILE MODAL */
 function openMemberModal(id) {
-  var m = members.find(function(x) { return x.id === id; });
+  var m = members.find(function(x){return x.id===id;});
   if (!m) { showToast('Member not found.'); return; }
   mmCurrentId = id;
-  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
-  document.getElementById('mm-id').textContent = 'ID: ' + m.id;
+  document.getElementById('mm-name').textContent = m.firstName+' '+m.lastName;
+  document.getElementById('mm-id').textContent = 'ID: '+m.id;
   mmTab('details');
-  var modal = document.getElementById('member-modal');
-  modal.style.display = 'flex';
+  document.getElementById('member-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
@@ -1044,207 +1097,259 @@ function closeMemberModal() {
   document.getElementById('member-modal').style.display = 'none';
   document.body.style.overflow = '';
   mmCurrentId = '';
+  ['mm-card-preview','mm-digital-link','mm-pay-panel','mm-pickup-panel'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 }
 
 function mmTab(tab) {
   ['details','edit','meals'].forEach(function(t) {
-    var panel = document.getElementById('mm-' + t);
-    if (panel) panel.style.display = t === tab ? 'block' : 'none';
-    var btn = document.getElementById('mm-tab-' + t);
+    var panel = document.getElementById('mm-'+t);
+    if (panel) panel.style.display = t===tab ? 'block' : 'none';
+    var btn = document.getElementById('mm-tab-'+t);
     if (btn) {
-      btn.style.color = t === tab ? 'var(--navy)' : 'var(--muted)';
-      btn.style.borderBottom = t === tab ? '2px solid var(--gold)' : '2px solid transparent';
+      btn.style.color = t===tab ? 'var(--navy)' : 'var(--muted)';
+      btn.style.borderBottom = t===tab ? '2px solid var(--gold)' : '2px solid transparent';
     }
   });
-  if (tab === 'details') mmLoadDetails();
-  if (tab === 'edit') mmLoadEdit();
-  if (tab === 'meals') mmLoadMeals();
+  if (tab==='details') mmLoadDetails();
+  if (tab==='edit') mmLoadEdit();
+  if (tab==='meals') mmLoadMeals();
 }
 
+var mmCurrentId = '';
+var PAY = {full:'Paid in Full', balance:'Balance Due', '':'--'};
+var AGE = {adult:'Adult', senior:'Senior', child:'Child', '':'--'};
+
 function mmLoadDetails() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   var hasBalance = m.paymentType === 'balance';
   var warn = document.getElementById('mm-balance-warn');
-  if (warn) { warn.style.display = hasBalance ? 'block' : 'none'; if (hasBalance) warn.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified'); }
-  var set = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
-  set('mm-tab-val', m.tabernacle || '--');
-  set('mm-age', AGE[m.ageGroup] || '--');
-  set('mm-email', m.email || '--');
-  set('mm-phone', m.phone || '--');
+  if (warn) { warn.style.display = hasBalance ? 'block' : 'none'; if (hasBalance) warn.textContent = 'Balance Due: '+(m.balanceNotes||'amount not specified'); }
+  var set = function(id,val){var el=document.getElementById(id);if(el)el.textContent=val;};
+  set('mm-tab-val', m.tabernacle||'--');
+  set('mm-age', AGE[m.ageGroup]||'--');
+  set('mm-email', m.email||'--');
+  set('mm-phone', m.phone||'--');
   set('mm-reg', m.registeredAt ? new Date(m.registeredAt).toLocaleDateString() : '--');
-  set('mm-notes', m.notes || '--');
+  set('mm-notes', m.notes||'--');
   var payEl = document.getElementById('mm-pay');
-  if (payEl) payEl.innerHTML = '<span class="tag ' + (hasBalance ? 'tag-balance' : 'tag-paid') + '">' + (PAY[m.paymentType] || '--') + '</span>';
+  if (payEl) payEl.innerHTML = '<span class="tag '+(hasBalance?'tag-balance':'tag-paid')+'">'+(PAY[m.paymentType]||'--')+'</span>';
   var ciEl = document.getElementById('mm-ci');
-  if (ciEl) ciEl.innerHTML = '<span class="tag ' + (m.checkinStatus === 'checkedin' ? 'tag-in' : 'tag-pending') + '">' + (m.checkinStatus === 'checkedin' ? 'Checked In' : 'Pending') + '</span>';
+  if (ciEl) ciEl.innerHTML = '<span class="tag '+(m.checkinStatus==='checkedin'?'tag-in':'tag-pending')+'">'+(m.checkinStatus==='checkedin'?'Checked In':'Pending')+'</span>';
   var ciBtn = document.getElementById('mm-checkin-btn');
   if (ciBtn) {
-    if (m.checkinStatus === 'checkedin') { ciBtn.textContent = 'Already Checked In'; ciBtn.disabled = true; ciBtn.style.opacity = '0.5'; }
-    else if (hasBalance) { ciBtn.textContent = 'Balance Due - Check In Anyway?'; ciBtn.disabled = false; ciBtn.style.opacity = '1'; ciBtn.style.background = '#92400E'; }
-    else { ciBtn.textContent = 'Check In + Hand Over Package'; ciBtn.disabled = false; ciBtn.style.opacity = '1'; ciBtn.style.background = ''; }
+    if (m.checkinStatus==='checkedin'){ciBtn.textContent='Already Checked In';ciBtn.disabled=true;ciBtn.style.opacity='0.5';}
+    else if (hasBalance){ciBtn.textContent='Balance Due - Check In Anyway?';ciBtn.disabled=false;ciBtn.style.opacity='1';ciBtn.style.background='#92400E';}
+    else{ciBtn.textContent='Check In + Hand Over Package';ciBtn.disabled=false;ciBtn.style.opacity='1';ciBtn.style.background='';}
   }
+  var payBtn = document.getElementById('mm-paybal-btn');
+  if (payBtn) payBtn.style.display = hasBalance ? 'inline-block' : 'none';
 }
 
 function mmCheckIn() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   m.checkinStatus = 'checkedin';
-  syncWrite({action: 'checkin', guestId: mmCurrentId});
+  syncWrite({action:'checkin', guestId:mmCurrentId});
   mmLoadDetails();
   renderCheckin();
   renderMembers();
-  showToast(m.firstName + ' checked in!');
+  showToast(m.firstName+' checked in!');
 }
 
 function mmReprint() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   closeMemberModal();
-  setTimeout(function() { reprintSingle(m); }, 200);
+  setTimeout(function(){reprintSingle(m);},200);
 }
 
 function mmViewCard() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   var preview = document.getElementById('mm-card-preview');
   var render = document.getElementById('mm-card-render');
-  var digitalLink = document.getElementById('mm-digital-link');
-  digitalLink.style.display = 'none';
-  // Use unique ID for modal preview to avoid DOM conflicts
-  var badgeHtml = makeBadge(m).replace('id="BQR-' + m.id + '"', 'id="MODAL-QR-' + m.id + '"');
+  document.getElementById('mm-digital-link').style.display = 'none';
+  document.getElementById('mm-pay-panel').style.display = 'none';
+  document.getElementById('mm-pickup-panel').style.display = 'none';
+  var badgeHtml = makeBadge(m).replace('id="BQR-'+m.id+'"','id="MODAL-QR-'+m.id+'"');
   render.innerHTML = badgeHtml;
   preview.style.display = 'block';
-  setTimeout(function() {
-    var el = document.getElementById('MODAL-QR-' + m.id);
-    if (el) {
-      el.innerHTML = '';
-      new QRCode(el, {text: m.id, width: 90, height: 90,
-        colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
-    }
-  }, 80);
-  preview.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  setTimeout(function(){
+    var el = document.getElementById('MODAL-QR-'+m.id);
+    if (el) { el.innerHTML=''; new QRCode(el,{text:m.id,width:90,height:90,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H}); }
+  },80);
+  preview.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function mmReprintFromPreview() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   document.getElementById('mm-card-preview').style.display = 'none';
   closeMemberModal();
-  setTimeout(function() { reprintSingle(m); }, 200);
+  setTimeout(function(){reprintSingle(m);},200);
 }
 
 function mmSendDigital() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
-  var base = window.location.href.replace('passover-registration.html', 'passover-badge.html');
-  var url = base + '?id=' + encodeURIComponent(m.id) + '&name=' + encodeURIComponent(m.firstName + ' ' + m.lastName);
-  var preview = document.getElementById('mm-card-preview');
-  var linkBox = document.getElementById('mm-digital-link');
-  preview.style.display = 'none';
+  var base = window.location.href.replace('passover-registration.html','passover-badge.html');
+  var url = base+'?id='+encodeURIComponent(m.id)+'&name='+encodeURIComponent(m.firstName+' '+m.lastName);
+  document.getElementById('mm-card-preview').style.display = 'none';
+  document.getElementById('mm-pay-panel').style.display = 'none';
+  document.getElementById('mm-pickup-panel').style.display = 'none';
   document.getElementById('mm-digital-url').textContent = url;
-  linkBox.style.display = 'block';
-  linkBox.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  document.getElementById('mm-digital-link').style.display = 'block';
+  document.getElementById('mm-digital-link').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function mmCopyDigital() {
   var url = document.getElementById('mm-digital-url').textContent;
-  navigator.clipboard.writeText(url)
-    .then(function() { showToast('Link copied! Send to member.'); })
-    .catch(function() { prompt('Copy this link:', url); });
+  navigator.clipboard.writeText(url).then(function(){showToast('Link copied! Send to member.');}).catch(function(){prompt('Copy this link:',url);});
 }
 
 function mmOpenDigital() {
-  var url = document.getElementById('mm-digital-url').textContent;
-  window.open(url, '_blank');
+  window.open(document.getElementById('mm-digital-url').textContent,'_blank');
+}
+
+function mmPayBalance() {
+  document.getElementById('mm-pay-panel').style.display = 'block';
+  document.getElementById('mm-pickup-panel').style.display = 'none';
+  document.getElementById('mm-pay-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function mmSavePayment(type) {
+  var m = members.find(function(x){return x.id===mmCurrentId;});
+  if (!m) return;
+  var amount = document.getElementById('mm-pay-amount').value.trim();
+  if (type==='full') {
+    m.paymentType = 'full';
+    m.balanceNotes = 'Paid in full'+(amount?' - '+amount:'')+' on '+new Date().toLocaleDateString();
+    showToast(m.firstName+' marked as Paid in Full!');
+  } else {
+    m.balanceNotes = 'Partial: '+amount+' on '+new Date().toLocaleDateString();
+    showToast('Partial payment recorded for '+m.firstName);
+  }
+  syncWrite({action:'register',guest:m});
+  document.getElementById('mm-pay-panel').style.display = 'none';
+  mmLoadDetails();
+  renderMembers();
+  renderCheckin();
+}
+
+function mmPackagePickup() {
+  document.getElementById('mm-pickup-panel').style.display = 'block';
+  document.getElementById('mm-pay-panel').style.display = 'none';
+  document.getElementById('mm-pickup-other').style.display = 'none';
+  document.getElementById('mm-pickup-self-confirm').style.display = 'none';
+  document.getElementById('mm-pickup-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function mmPickupSelf() {
+  var m = members.find(function(x){return x.id===mmCurrentId;});
+  if (!m) return;
+  m.notes = (m.notes?m.notes+' | ':'')+'Package picked up by member on '+new Date().toLocaleDateString();
+  syncWrite({action:'register',guest:m});
+  document.getElementById('mm-pickup-other').style.display = 'none';
+  document.getElementById('mm-pickup-self-confirm').style.display = 'block';
+  showToast('Package pickup recorded!');
+}
+
+function mmSavePickup() {
+  var m = members.find(function(x){return x.id===mmCurrentId;});
+  if (!m) return;
+  var name = document.getElementById('mm-pickup-name').value.trim();
+  if (!name) { showToast('Please enter the name of the person picking up.'); return; }
+  m.notes = (m.notes?m.notes+' | ':'')+'Package picked up by '+name+' on '+new Date().toLocaleDateString();
+  syncWrite({action:'register',guest:m});
+  document.getElementById('mm-pickup-panel').style.display = 'none';
+  showToast('Pickup recorded for '+name+'!');
+  mmLoadDetails();
 }
 
 function mmLoadEdit() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
-  var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
-  set('mm-edit-fn', m.firstName); set('mm-edit-ln', m.lastName);
-  set('mm-edit-email', m.email); set('mm-edit-phone', m.phone);
-  set('mm-edit-bal', m.balanceNotes); set('mm-edit-notes', m.notes);
-  var payEl = document.getElementById('mm-edit-pay');
-  if (payEl) payEl.value = m.paymentType || 'full';
-  var status = document.getElementById('mm-edit-status');
-  if (status) status.textContent = '';
+  var set = function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
+  set('mm-edit-fn',m.firstName);set('mm-edit-ln',m.lastName);
+  set('mm-edit-email',m.email);set('mm-edit-phone',m.phone);
+  set('mm-edit-bal',m.balanceNotes);set('mm-edit-notes',m.notes);
+  var payEl=document.getElementById('mm-edit-pay');if(payEl)payEl.value=m.paymentType||'full';
+  var s=document.getElementById('mm-edit-status');if(s)s.textContent='';
 }
 
 function mmSaveEdit() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
-  var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  m.firstName = get('mm-edit-fn'); m.lastName = get('mm-edit-ln');
-  m.email = get('mm-edit-email'); m.phone = get('mm-edit-phone');
-  m.paymentType = get('mm-edit-pay'); m.balanceNotes = get('mm-edit-bal'); m.notes = get('mm-edit-notes');
-  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
-  var status = document.getElementById('mm-edit-status');
-  if (status) { status.textContent = 'Saved!'; setTimeout(function() { status.textContent = ''; }, 2000); }
-  renderMembers(); renderCheckin();
-  showToast('Changes saved for ' + m.firstName);
+  var get=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+  m.firstName=get('mm-edit-fn');m.lastName=get('mm-edit-ln');
+  m.email=get('mm-edit-email');m.phone=get('mm-edit-phone');
+  m.paymentType=get('mm-edit-pay');m.balanceNotes=get('mm-edit-bal');m.notes=get('mm-edit-notes');
+  document.getElementById('mm-name').textContent=m.firstName+' '+m.lastName;
+  var s=document.getElementById('mm-edit-status');
+  if(s){s.textContent='Saved!';setTimeout(function(){s.textContent='';},2000);}
+  renderMembers();renderCheckin();
+  showToast('Changes saved for '+m.firstName);
 }
 
 function mmLoadMeals() {
-  var m = members.find(function(x) { return x.id === mmCurrentId; });
+  var m = members.find(function(x){return x.id===mmCurrentId;});
   if (!m) return;
   var grid = document.getElementById('mm-meal-grid');
   if (!grid) return;
-  grid.innerHTML = DAYS_LIST.map(function(day) {
-    var b = m['B_' + day] === 'USED';
-    var l = m['L_' + day] === 'USED';
-    var bg1 = b ? 'var(--green-bg)' : 'var(--border)';
-    var c1 = b ? 'var(--green)' : 'var(--muted)';
-    var bg2 = l ? 'var(--green-bg)' : 'var(--border)';
-    var c2 = l ? 'var(--green)' : 'var(--muted)';
+  var days = ['Seder','Mar31','Apr1','Apr2','Apr3','Apr4','Apr5','Apr6','Apr7','Apr8'];
+  var labels = {Seder:'Seder',Mar31:'Mar 31',Apr1:'Apr 1',Apr2:'Apr 2',Apr3:'Apr 3',Apr4:'Apr 4',Apr5:'Apr 5',Apr6:'Apr 6',Apr7:'Apr 7',Apr8:'Apr 8'};
+  grid.innerHTML = days.map(function(day){
+    var b = m['B_'+day]==='USED';
+    var l = m['L_'+day]==='USED';
     return '<div style="background:var(--off);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'
-      + '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;">' + DAY_LABELS[day] + '</div>'
-      + '<div style="margin-bottom:4px;"><span style="background:' + bg1 + ';color:' + c1 + ';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Breakfast</span></div>'
-      + '<div><span style="background:' + bg2 + ';color:' + c2 + ';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Lunch</span></div>'
-      + '</div>';
+      +'<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;">'+labels[day]+'</div>'
+      +(day==='Seder'?'<div><span style="background:'+(l?'var(--green-bg)':'var(--border)')+';color:'+(l?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Seder</span></div>'
+      :'<div style="margin-bottom:4px;"><span style="background:'+(b?'var(--green-bg)':'var(--border)')+';color:'+(b?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Breakfast</span></div>'
+      +'<div><span style="background:'+(l?'var(--green-bg)':'var(--border)')+';color:'+(l?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Lunch</span></div>')
+      +'</div>';
   }).join('');
 }
 
-/* SETUP */
 function saveSetup() {
   csvURL = document.getElementById('csv-url-input').value.trim();
   scriptURL = document.getElementById('script-url-input').value.trim();
-  localStorage.setItem('passover_csv_url', csvURL);
-  localStorage.setItem('passover_sheet_url', scriptURL);
+  localStorage.setItem('passover_csv_url',csvURL);
+  localStorage.setItem('passover_sheet_url',scriptURL);
   document.getElementById('setup-status').textContent = 'Saved! Loading members...';
-  loadFromSheet(function() {
-    document.getElementById('setup-status').textContent = members.length + ' members loaded!';
-    showToast('Connected - ' + members.length + ' members loaded');
+  loadFromSheet(function(){
+    document.getElementById('setup-status').textContent = members.length+' members loaded!';
+    showToast('Connected - '+members.length+' members loaded');
   });
 }
 
 function testConnection() {
   document.getElementById('setup-status').textContent = 'Testing...';
-  loadFromSheet(function() {
-    document.getElementById('setup-status').textContent = members.length > 0 ? members.length + ' members found!' : 'Connected but no members found yet';
+  loadFromSheet(function(){
+    document.getElementById('setup-status').textContent = members.length>0?members.length+' members found!':'Connected but no members found yet';
   });
 }
 
-/* WRITE BACK */
 function syncWrite(payload) {
-  if (!scriptURL) return;
-  fetch(scriptURL, {method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)})
-    .catch(function(e) { console.warn('Write failed', e); });
+  var url = localStorage.getItem('passover_sheet_url');
+  if (!url) return;
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
 }
 
-/* CSV EXPORT */
 function exportCSV() {
   if (!members.length) { showToast('No members to export.'); return; }
   var h = ['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
-  var rows = members.map(function(m) {
-    var arr = [m.id, m.firstName, m.lastName, m.email||'', m.phone||'', m.tabernacle||'', m.ageGroup||'', m.paymentType||'', m.balanceNotes||'', m.checkinStatus||'', m.registeredAt||'', m.notes||''];
-    return arr.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+  var rows = members.map(function(m){
+    var arr=[m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt||'',m.notes||''];
+    return arr.map(function(v){return '"'+String(v).split('"').join('""')+'"';}).join(',');
   });
-  var csv = [h.join(',')].concat(rows).join('\n');
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-  a.download = 'cogasoc_members_' + new Date().toISOString().slice(0,10) + '.csv';
+  var csv=[h.join(',')].concat(rows).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
 
@@ -1252,96 +1357,8 @@ function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 3500);
+  setTimeout(function(){t.classList.remove('show');},3500);
 }
 </script>
-
-
-
-
-
-
-<!-- MEMBER PROFILE MODAL -->
-<div id="member-modal" style="display:none;position:fixed;inset:0;background:rgba(27,46,75,0.6);z-index:800;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(27,46,75,0.3);">
-    <!-- Modal Header -->
-    <div style="background:var(--navy);padding:20px 24px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div id="mm-name" style="font-family:'Cormorant Garamond',serif;color:#fff;font-size:26px;font-weight:600;"></div>
-        <div id="mm-id" style="font-family:monospace;font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;"></div>
-      </div>
-      <button onclick="closeMemberModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">x</button>
-    </div>
-    <!-- Tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--off);">
-      <button class="mm-tab active" onclick="mmTab('details')" id="mm-tab-details" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--navy);border-bottom:2px solid var(--gold);">Details</button>
-      <button class="mm-tab" onclick="mmTab('edit')" id="mm-tab-edit" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;">Edit</button>
-      <button class="mm-tab" onclick="mmTab('meals')" id="mm-tab-meals" style="flex:1;padding:11px;border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;">Meal History</button>
-    </div>
-    <!-- Details Panel -->
-    <div id="mm-details" style="padding:20px 24px;">
-      <div id="mm-balance-warn" style="display:none;background:var(--red-bg);border:1px solid rgba(153,27,27,0.2);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--red);margin-bottom:14px;"></div>
-      <table style="width:100%;font-size:13px;">
-        <tr><td style="padding:7px 0;color:var(--muted);width:130px;font-weight:600;">Tabernacle</td><td id="mm-tab-val" style="font-weight:700;color:var(--navy);"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Age Group</td><td id="mm-age" style="font-weight:700;color:var(--navy);"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Payment</td><td id="mm-pay"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Check-in</td><td id="mm-ci"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Email</td><td id="mm-email" style="font-size:12px;"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Phone</td><td id="mm-phone" style="font-size:12px;"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Registered</td><td id="mm-reg" style="font-size:12px;color:var(--muted);"></td></tr>
-        <tr><td style="padding:7px 0;color:var(--muted);font-weight:600;">Notes</td><td id="mm-notes" style="font-size:12px;color:var(--muted);"></td></tr>
-      </table>
-      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
-        <button id="mm-checkin-btn" onclick="mmCheckIn()" class="btn-green" style="font-size:13px;padding:9px 18px;">Check In</button>
-        <button onclick="mmViewCard()" class="btn-secondary" style="font-size:13px;padding:9px 16px;">View Card</button>
-        <button onclick="mmReprint()" class="btn-secondary" style="font-size:13px;padding:9px 16px;">Reprint</button>
-        <button onclick="mmSendDigital()" class="btn-gold" style="font-size:13px;padding:9px 16px;">Send Digital</button>
-      </div>
-      <div id="mm-card-preview" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;">ID Card Preview</div>
-        <div id="mm-card-render" style="transform-origin:top left;"></div>
-        <div style="display:flex;gap:8px;margin-top:12px;">
-          <button onclick="mmReprintFromPreview()" class="btn-primary" style="font-size:12px;padding:8px 16px;">Print This Card</button>
-          <button onclick="document.getElementById('mm-card-preview').style.display='none';" class="btn-secondary" style="font-size:12px;padding:8px 14px;">Close</button>
-        </div>
-      </div>
-      <div id="mm-digital-link" style="display:none;margin-top:12px;padding:12px;background:var(--navy-pale);border-radius:8px;">
-        <div style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Digital Badge Link</div>
-        <div id="mm-digital-url" style="font-size:11px;color:var(--navy2);word-break:break-all;margin-bottom:10px;font-family:monospace;"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="mmCopyDigital()" class="btn-primary" style="font-size:12px;padding:7px 14px;">Copy Link</button>
-          <button onclick="mmOpenDigital()" class="btn-secondary" style="font-size:12px;padding:7px 14px;">Open Badge</button>
-          <button onclick="document.getElementById('mm-digital-link').style.display='none';" class="btn-secondary" style="font-size:12px;padding:7px 12px;">Close</button>
-        </div>
-      </div>
-    </div>
-    <!-- Edit Panel -->
-    <div id="mm-edit" style="display:none;padding:20px 24px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">First Name</label><input id="mm-edit-fn" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Last Name</label><input id="mm-edit-ln" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Email</label><input id="mm-edit-email" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Phone</label><input id="mm-edit-phone" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Payment Type</label>
-          <select id="mm-edit-pay" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;">
-            <option value="full">Paid in Full</option><option value="balance">Balance Due</option>
-          </select>
-        </div>
-        <div><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Balance Notes</label><input id="mm-edit-bal" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-        <div style="grid-column:1/-1;"><label style="font-size:11px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px;">Notes</label><input id="mm-edit-notes" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:13px;outline:none;"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px;">
-        <button onclick="mmSaveEdit()" class="btn-primary" style="font-size:13px;padding:9px 20px;">Save Changes</button>
-        <button onclick="mmTab('details')" class="btn-secondary" style="font-size:13px;padding:9px 16px;">Cancel</button>
-        <span id="mm-edit-status" style="font-size:12px;color:var(--green);font-weight:700;line-height:2.2;"></span>
-      </div>
-    </div>
-    <!-- Meal History Panel -->
-    <div id="mm-meals" style="display:none;padding:20px 24px;">
-      <div id="mm-meal-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
