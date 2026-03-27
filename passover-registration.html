@@ -1111,8 +1111,13 @@ function copyLink() {
 }
 
 function openMemberModal(id) {
-  var m = members.find(function(x){return x.id===id;});
-  if (!m) { showToast('Member not found.'); return; }
+  if (!id) return;
+  id = String(id).trim();
+  // Try exact match first, then case-insensitive, then trimmed
+  var m = members.find(function(x){ return x.id === id; })
+       || members.find(function(x){ return x.id.trim() === id; })
+       || members.find(function(x){ return x.id.toUpperCase() === id.toUpperCase(); });
+  if (!m) { showToast('Member not found: ' + id); return; }
   mmCurrentId = id;
   document.getElementById('mm-name').textContent = m.firstName+' '+m.lastName;
   document.getElementById('mm-id').textContent = 'ID: '+m.id;
