@@ -566,6 +566,9 @@ function loadFromSheet(callback) {
             hdrs.forEach(function(h, i) { o[h] = (row[i] || '').trim(); });
             return normMember(o);
           }).filter(function(m) { return m.id && m.firstName; });
+          // Save to localStorage for scanner to use
+          localStorage.setItem('cogasoc_members', JSON.stringify(members));
+          localStorage.setItem('cogasoc_members_source', 'registration portal');
           setSyncDot('live');
         } else {
           setSyncDot('error');
@@ -597,14 +600,14 @@ function loadViaScript(callback) {
 
 function normMember(g) {
   return {
-    id: g.GuestID || g.id || '',
+    id: String(g.GuestID || g.id || '').trim(),
     firstName: g.FirstName || g.firstName || '',
     lastName: g.LastName || g.lastName || '',
     email: g.Email || g.email || '',
     phone: g.Phone || g.phone || '',
     tabernacle: g.Tabernacle || g.tabernacle || '',
     ageGroup: (g.AgeGroup || g.ageGroup || '').toLowerCase(),
-    paymentType: (g.PaymentType || g.paymentType || '').toLowerCase(),
+    paymentType: (g.PaymentType || g.paymentType || 'full').toLowerCase(),
     balanceNotes: g.BalanceNotes || g.balanceNotes || '',
     checkinStatus: (g.CheckinStatus || g.checkinStatus || 'pending').toLowerCase(),
     notes: g.Notes || g.notes || '',
