@@ -1058,10 +1058,20 @@ function printGridBadges(gridId) {
   var grid = document.getElementById(gridId);
   if (!grid || !grid.children.length) { showToast('No cards to print.'); return; }
   var css = getCardCSS();
+  // Avery 5371: 2 col x 5 row per page, 3.5x2in cards
+  // Each page is a full avery sheet with exact margins
   var style = [
     '@page{size:8.5in 11in;margin:0;}',
-    'html,body{margin:0;padding:0;width:8.5in;height:11in;}',
-    '.avery-sheet{',
+    'html,body{margin:0;padding:0;}',
+    '.avery-page{',
+    '  width:8.5in;',
+    '  height:11in;',
+    '  position:relative;',
+    '  page-break-after:always;',
+    '  page-break-inside:avoid;',
+    '}',
+    '.avery-page:last-child{page-break-after:auto;}',
+    '.avery-grid{',
     '  position:absolute;',
     '  top:0.5in;',
     '  left:0.75in;',
@@ -1069,33 +1079,42 @@ function printGridBadges(gridId) {
     '  display:grid;',
     '  grid-template-columns:3.5in 3.5in;',
     '  grid-template-rows:repeat(5,2in);',
-    '  column-gap:0;',
-    '  row-gap:0;',
+    '  column-gap:0;row-gap:0;',
     '}',
     '.card-cell{',
-    '  width:3.5in;',
-    '  height:2in;',
-    '  display:flex;',
-    '  align-items:center;',
-    '  justify-content:center;',
+    '  width:3.5in;height:2in;',
+    '  display:flex;align-items:center;justify-content:center;',
     '  overflow:hidden;',
     '}',
     '.id-card{',
-    '  width:3.3in!important;',
-    '  height:1.85in!important;',
+    '  width:3.3in!important;height:1.85in!important;',
     '  border-radius:8px!important;',
     '  box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;',
-    '  page-break-inside:avoid;',
-    '  overflow:hidden;',
-    '  transform:scale(1);',
-    '  flex-shrink:0;',
+    '  page-break-inside:avoid;overflow:hidden;flex-shrink:0;',
     '}'
   ].join('');
-  var cards = Array.from(grid.querySelectorAll('.id-card')).map(function(c) {
-    return '<div class="card-cell">' + c.outerHTML + '</div>';
-  });
+
+  // Split cards into groups of 10 (one full Avery sheet per page)
+  var allCards = Array.from(grid.querySelectorAll('.id-card'));
+  var pages = [];
+  for (var i = 0; i < allCards.length; i += 10) {
+    pages.push(allCards.slice(i, i + 10));
+  }
+
+  var pagesHtml = pages.map(function(pageCards) {
+    var cells = pageCards.map(function(c) {
+      return '<div class="card-cell">' + c.outerHTML + '</div>';
+    }).join('');
+    // Pad to 10 cells so grid stays aligned
+    while (pageCards.length < 10) {
+      cells += '<div class="card-cell"></div>';
+      pageCards.push({});
+    }
+    return '<div class="avery-page"><div class="avery-grid">' + cells + '</div></div>';
+  }).join('');
+
   var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body><div class="avery-sheet">' + cards.join('') + '<\/div><scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};<\/scr' + 'ipt></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + pagesHtml + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};</' + 'script></body></html>');
   w.document.close();
 }
 function openDigital() {
