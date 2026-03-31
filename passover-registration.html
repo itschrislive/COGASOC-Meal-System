@@ -68,7 +68,7 @@ input:focus,select:focus{border-color:var(--navy3);box-shadow:0 0 0 3px rgba(61,
 .id-org-sub{font-size:8px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.1em;text-transform:uppercase;z-index:2;}
 .id-org{z-index:2;}
 .id-body{padding:16px 12px 14px;display:flex;gap:10px;align-items:center;}
-.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;}
+.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;width:86px;height:86px;overflow:hidden;}
 .id-info{flex:1;min-width:0;}
 .id-name{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:700;color:#1B2E4B;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .id-id{font-size:9px;color:#A8835A;font-family:monospace;margin-top:3px;font-weight:700;letter-spacing:0.04em;}
@@ -387,84 +387,6 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
   <div id="no-print" style="display:none;text-align:center;padding:60px;color:var(--muted);">Register members or connect your sheet to generate cards.</div>
 </div>
 
-<!-- SETUP -->
-<div class="panel" id="panel-setup">
-  <div class="section-title">Setup &amp; Connection</div>
-  <div class="section-desc">Connect your master Google Sheet. One sheet powers everything — registration, check-in, meal tracking, admin.</div>
-  <div class="setup-step">
-    <div class="step-num">1</div>
-    <div class="step-content">
-      <h4>Your Google Sheet headers (Row 1)</h4>
-      <p>Make sure your sheet has these exact headers:<br><br>
-      <code>GuestID | FirstName | LastName | Email | Phone | Tabernacle | AgeGroup | PaymentType | BalanceNotes | CheckinStatus | RegisteredAt | Notes | B_Mar31 | L_Mar31 | B_Apr1 | L_Apr1 | B_Apr2 | L_Apr2 | B_Apr3 | L_Apr3 | B_Apr4 | L_Apr4 | B_Apr5 | L_Apr5 | B_Apr6 | L_Apr6 | B_Apr7 | L_Apr7 | B_Apr8 | L_Apr8</code></p>
-    </div>
-  </div>
-  <div class="setup-step">
-    <div class="step-num">2</div>
-    <div class="step-content">
-      <h4>Publish as CSV (for reading all members)</h4>
-      <p>In your Google Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>. Select <em>Sheet1</em> and <em>CSV</em>. Click Publish. Paste the URL below.</p>
-    </div>
-  </div>
-  <div class="setup-step">
-    <div class="step-num">3</div>
-    <div class="step-content">
-      <h4>Deploy Apps Script (for saving new data)</h4>
-      <p>In your Sheet: <strong>Extensions &rarr; Apps Script</strong>. Paste the script at the bottom of this page. <strong>Deploy &rarr; New Deployment &rarr; Web App &rarr; Anyone</strong>. Paste the URL below.</p>
-    </div>
-  </div>
-  <div class="setup-step">
-    <div class="step-num">4</div>
-    <div class="step-content">
-      <h4>Enter your URLs</h4>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
-        <div>
-          <label style="display:block;margin-bottom:5px;">CSV URL (reading)</label>
-          <input type="text" id="csv-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
-        </div>
-        <div>
-          <label style="display:block;margin-bottom:5px;">Apps Script URL (writing)</label>
-          <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button class="btn-primary" onclick="saveSetup()">Save &amp; Connect</button>
-          <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
-          <span id="setup-status" style="font-size:13px;color:var(--muted);font-weight:600;"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="setup-step">
-    <div class="step-num">5</div>
-    <div class="step-content">
-      <h4>Apps Script code</h4>
-      <pre style="background:var(--navy);color:var(--gold2);padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-top:8px;">const SN='Sheet1';
-function doPost(e){
-  try{
-    const d=JSON.parse(e.postData.contents);
-    const s=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SN);
-    if(d.action==='register'){
-      const g=d.guest;
-      s.appendRow([g.id,g.firstName,g.lastName,g.email||'',g.phone||'',g.tabernacle||'',g.ageGroup||'',g.paymentType||'',g.balanceNotes||'','pending',g.registeredAt,g.notes||'',...new Array(16).fill('')]);
-      return R({ok:true});
-    }
-    if(d.action==='checkin'){
-      const rows=s.getDataRange().getValues(),hdr=rows[0];
-      const ci=hdr.indexOf('CheckinStatus');
-      for(let i=1;i<rows.length;i++){
-        if(rows[i][0]===d.guestId){
-          if(ci>=0)s.getRange(i+1,ci+1).setValue('checkedin');
-          break;
-        }
-      }
-      return R({ok:true});
-    }
-  } catch(e){return R({error:e.toString()});}
-  function R(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON);}
-}</pre>
-    </div>
-  </div>
-</div>
 
 <script>
 var TABS_LIST = ['onsite','checkin','members','admin','print','setup'];
@@ -999,7 +921,7 @@ function renderBadgesInGrid(list, gridId) {
       var el = document.getElementById('BQR-' + m.id);
       if (!el) return;
       new QRCode(el, {text: m.id,
-        width: 120, height: 120, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+        width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
     }, 80);
   });
 }
@@ -1070,7 +992,7 @@ function printSelected() {
   sel.forEach(function(m) {
     setTimeout(function() {
       var el = document.getElementById('PQRR-'+m.id);
-      if (el) new QRCode(el,{text:m.id,width:90,height:90,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H});
+      if (el) new QRCode(el,{text:m.id,width:80,height:80,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H});
       pending--;
       if (pending === 0) {
         var allCards = Array.from(tmp.querySelectorAll('.id-card'));
@@ -1345,7 +1267,7 @@ function mmViewCard() {
   preview.style.display = 'block';
   setTimeout(function(){
     var el = document.getElementById('MODAL-QR-'+m.id);
-    if (el) { el.innerHTML=''; new QRCode(el,{text:m.id,width:90,height:90,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H}); }
+    if (el) { el.innerHTML=''; new QRCode(el,{text:m.id,width:80,height:80,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H}); }
   },80);
   preview.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1544,6 +1466,8 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},3500);
 }
+
+
 
 </script>
 </body>
