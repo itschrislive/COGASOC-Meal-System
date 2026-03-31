@@ -365,17 +365,25 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
     <button onclick="document.getElementById('reprint-bar').style.display='none';" class="btn-secondary" style="font-size:12px;padding:7px 14px;">Cancel</button>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
-    <div><div class="section-title">Print Cards</div><div class="section-desc" style="margin-bottom:0;">Credit card size (3.375" x 2.125") — click any card to reprint individually</div></div>
+    <div><div class="section-title">Print Cards</div><div class="section-desc" style="margin-bottom:0;">Search, select, and print just the cards you need</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <input class="search-bar" type="text" id="print-search" placeholder="Search to reprint..." oninput="filterPrintGrid()" style="width:220px;">
+      <input class="search-bar" type="text" id="print-search" placeholder="Search by name, ID, tabernacle..." oninput="filterPrintGrid()" style="width:240px;">
       <button class="btn-secondary" onclick="generateAllBadges()">Refresh</button>
       <button class="btn-gold" onclick="printGridBadges('all-print-grid')">Print All</button>
     </div>
   </div>
-  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">
-    <span id="print-count">0</span> cards shown &nbsp;&middot;&nbsp; Click any card to reprint it
+  <!-- Selection toolbar -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;background:var(--navy-pale);border-radius:10px;padding:10px 14px;">
+    <input type="checkbox" id="select-all-cards" onchange="toggleSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer;">
+    <label for="select-all-cards" style="font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;">Select All</label>
+    <span style="color:var(--border);margin:0 4px;">|</span>
+    <span style="font-size:13px;color:var(--mid);"><span id="selected-count">0</span> selected</span>
+    <span style="color:var(--border);margin:0 4px;">|</span>
+    <span style="font-size:13px;color:var(--muted);"><span id="print-count">0</span> shown</span>
+    <button class="btn-primary" onclick="printSelected()" id="print-selected-btn" style="margin-left:auto;display:none;font-size:12px;padding:7px 16px;">Print Selected (<span id="print-selected-count">0</span>)</button>
+    <button class="btn-secondary" onclick="clearSelection()" style="font-size:12px;padding:7px 14px;display:none;" id="clear-sel-btn">Clear</button>
   </div>
-  <div id="all-print-grid" class="print-grid"></div>
+    <div id="all-print-grid"  <div id="all-print-grid" class="print-grid"></div>
   <div id="no-print" style="display:none;text-align:center;padding:60px;color:var(--muted);">Register members or connect your sheet to generate cards.</div>
 </div>
 
@@ -445,37 +453,7 @@ function doPost(e){
       const ci=hdr.indexOf('CheckinStatus');
       for(let i=1;i<rows.length;i++){
         if(rows[i][0]===d.guestId){
-          if(ci>=0)s.getRange(i+1,ci+1).setValue('checkedin');
-          return R({ok:true,name:rows[i][1]+' '+rows[i][2]});
-        }
-      }
-      return R({ok:false,error:'Not found'});
-    }
-    if(d.action==='scan'){
-      const rows=s.getDataRange().getValues(),hdr=rows[0];
-      const ci=hdr.indexOf(d.mealCol);
-      if(ci<0)return R({ok:false,error:'Unknown column'});
-      for(let i=1;i<rows.length;i++){
-        if(rows[i][0]===d.guestId){
-          const cell=s.getRange(i+1,ci+1);
-          if(cell.getValue()==='USED')return R({ok:true,status:'already_used',name:rows[i][1]+' '+rows[i][2]});
-          cell.setValue('USED');
-          return R({ok:true,status:'ok',name:rows[i][1]+' '+rows[i][2]});
-        }
-      }
-      return R({ok:false,error:'Not found'});
-    }
-  }catch(err){return R({ok:false,error:err.toString()});}
-}
-function R(d){return ContentService.createTextOutput(JSON.stringify(d)).setMimeType(ContentService.MimeType.JSON);}</pre>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-var TABS_LIST = ['onsite','checkin','members','admin','print','setup'];
+          if(ci>=0)s.getRange(i+1,ci+1).setValue('checvar TABS_LIST = ['onsite','checkin','members','admin','print','setup'];
 var TABERNACLES = ['Anchorage', 'Alexandria', 'Atlanta', 'Atlantic City', 'Baltimore', 'Belleville', 'Boston', 'Brooklyn', 'Charlotte', 'Chicago', 'Cincinnati', 'Cleveland', 'Detroit', 'Greensboro', 'Harrisburg', 'Hartford', 'Jacksonville', 'Los Angeles', 'Miami', 'Mt. Vernon', 'Newark - Plainfield', 'Philadelphia', 'Providence', 'Richmond', 'Roanoke', 'Rochester', 'Salisbury', 'Southern Pines', 'Washington', 'Wilmington', 'Zanesville'];
 var DAYS_LIST = ['Mar31', 'Apr1', 'Apr2', 'Apr3', 'Apr4', 'Apr5', 'Apr6', 'Apr7', 'Apr8'];
 var DAY_LABELS = {'Mar31': 'Mar 31', 'Apr1': 'Apr 1', 'Apr2': 'Apr 2', 'Apr3': 'Apr 3', 'Apr4': 'Apr 4', 'Apr5': 'Apr 5', 'Apr6': 'Apr 6', 'Apr7': 'Apr 7', 'Apr8': 'Apr 8'};
@@ -962,13 +940,40 @@ function renderBadgesInGrid(list, gridId) {
   var grid = document.getElementById(gridId);
   if (!grid) return;
   grid.innerHTML = '';
+  // Reset selection state
+  selectedCards = {};
+  updateSelectionUI();
   list.forEach(function(m) {
     var wrap = document.createElement('div');
-    wrap.style.cssText = 'cursor:pointer;transition:transform 0.15s;';
-    wrap.innerHTML = makeBadge(m);
+    wrap.style.cssText = 'position:relative;transition:transform 0.15s;';
+    wrap.setAttribute('data-card-id', m.id);
+    // Checkbox overlay
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.style.cssText = 'position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer;z-index:10;accent-color:var(--navy);';
+    cb.checked = !!selectedCards[m.id];
+    cb.onclick = function(e) {
+      e.stopPropagation();
+      if (cb.checked) { selectedCards[m.id] = m; } else { delete selectedCards[m.id]; }
+      wrap.style.outline = cb.checked ? '3px solid var(--gold)' : 'none';
+      wrap.style.borderRadius = cb.checked ? '12px' : '0';
+      document.getElementById('select-all-cards').checked = false;
+      updateSelectionUI();
+    };
+    wrap.appendChild(cb);
+    var badgeDiv = document.createElement('div');
+    badgeDiv.innerHTML = makeBadge(m);
+    wrap.appendChild(badgeDiv);
     if (gridId === 'all-print-grid') {
-      wrap.onclick = function() { openReprintConfirm(m); };
-      wrap.onmouseenter = function() { this.style.transform = 'scale(1.03)'; };
+      badgeDiv.onclick = function() {
+        cb.checked = !cb.checked;
+        if (cb.checked) { selectedCards[m.id] = m; } else { delete selectedCards[m.id]; }
+        wrap.style.outline = cb.checked ? '3px solid var(--gold)' : 'none';
+        wrap.style.borderRadius = cb.checked ? '12px' : '0';
+        document.getElementById('select-all-cards').checked = false;
+        updateSelectionUI();
+      };
+      wrap.onmouseenter = function() { this.style.transform = 'scale(1.02)'; };
       wrap.onmouseleave = function() { this.style.transform = 'scale(1)'; };
     }
     grid.appendChild(wrap);
@@ -979,6 +984,93 @@ function renderBadgesInGrid(list, gridId) {
         width: 90, height: 90, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
     }, 80);
   });
+}
+
+var selectedCards = {};
+
+function toggleSelectAll(checked) {
+  var grid = document.getElementById('all-print-grid');
+  selectedCards = {};
+  grid.querySelectorAll('[data-card-id]').forEach(function(wrap) {
+    var id = wrap.getAttribute('data-card-id');
+    var cb = wrap.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = checked;
+    wrap.style.outline = checked ? '3px solid var(--gold)' : 'none';
+    wrap.style.borderRadius = checked ? '12px' : '0';
+    if (checked) {
+      var m = members.find(function(x){return x.id===id;});
+      if (m) selectedCards[id] = m;
+    }
+  });
+  updateSelectionUI();
+}
+
+function clearSelection() {
+  toggleSelectAll(false);
+  document.getElementById('select-all-cards').checked = false;
+}
+
+function updateSelectionUI() {
+  var count = Object.keys(selectedCards).length;
+  document.getElementById('selected-count').textContent = count;
+  var printBtn = document.getElementById('print-selected-btn');
+  var clearBtn = document.getElementById('clear-sel-btn');
+  document.getElementById('print-selected-count').textContent = count;
+  if (count > 0) {
+    printBtn.style.display = 'inline-block';
+    clearBtn.style.display = 'inline-block';
+  } else {
+    printBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+}
+
+function printSelected() {
+  var sel = Object.values(selectedCards);
+  if (!sel.length) { showToast('No cards selected.'); return; }
+  var css = getCardCSS();
+  var style = [
+    '@page{size:8.5in 11in;margin:0;}',
+    'html,body{margin:0;padding:0;}',
+    '.avery-page{width:8.5in;height:11in;position:relative;page-break-after:always;page-break-inside:avoid;}',
+    '.avery-page:last-child{page-break-after:auto;}',
+    '.avery-grid{position:absolute;top:0.5in;left:0.75in;width:7in;display:grid;grid-template-columns:3.5in 3.5in;grid-template-rows:repeat(5,2in);column-gap:0;row-gap:0;}',
+    '.card-cell{width:3.5in;height:2in;display:flex;align-items:center;justify-content:center;overflow:hidden;}',
+    '.id-card{width:3.3in!important;height:1.85in!important;border-radius:8px!important;box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;page-break-inside:avoid;overflow:hidden;flex-shrink:0;}'
+  ].join('');
+  // Build temp grid with QR codes
+  var tmp = document.createElement('div');
+  tmp.style.display = 'none';
+  document.body.appendChild(tmp);
+  sel.forEach(function(m) {
+    var d = document.createElement('div');
+    d.innerHTML = makeBadge(m).replace('id="BQR-'+m.id+'"','id="PQRR-'+m.id+'"');
+    tmp.appendChild(d);
+  });
+  // Generate QRs then print
+  var pending = sel.length;
+  sel.forEach(function(m) {
+    setTimeout(function() {
+      var el = document.getElementById('PQRR-'+m.id);
+      if (el) new QRCode(el,{text:m.id,width:90,height:90,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H});
+      pending--;
+      if (pending === 0) {
+        var allCards = Array.from(tmp.querySelectorAll('.id-card'));
+        var pages = [];
+        for (var i=0;i<allCards.length;i+=10) pages.push(allCards.slice(i,i+10));
+        var pagesHtml = pages.map(function(pageCards) {
+          var cells = pageCards.map(function(c){return '<div class="card-cell">'+c.outerHTML+'</div>';}).join('');
+          for (var p=pageCards.length;p<10;p++) cells += '<div class="card-cell"></div>';
+          return '<div class="avery-page"><div class="avery-grid">'+cells+'</div></div>';
+        }).join('');
+        document.body.removeChild(tmp);
+        var w = window.open('','_blank');
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'<style>'+style+'</style></head><body>'+pagesHtml+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};</'+'script></body></html>');
+        w.document.close();
+      }
+    }, 150);
+  });
+  showToast('Preparing ' + sel.length + ' cards for print...');
 }
 
 function generateAllBadges() {
@@ -1395,6 +1487,26 @@ function syncWrite(payload) {
 }
 
 function exportCSV() {
+  if (!members.length) { showToast('No members to export.'); return; }
+  var h = ['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
+  var rows = members.map(function(m){
+    var arr=[m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt||'',m.notes||''];
+    return arr.map(function(v){return '"'+String(v).split('"').join('""')+'"';}).join(',');
+  });
+  var csv=[h.join(',')].concat(rows).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3500);
+}
+exportCSV() {
   if (!members.length) { showToast('No members to export.'); return; }
   var h = ['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
   var rows = members.map(function(m){
