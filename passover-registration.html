@@ -567,7 +567,8 @@ function loadFromSheet(callback) {
         }
         if (callback) callback();
       })
-      .catch(function() {
+      .catch(function(e) {
+        diag && diag('CSV fetch error: ' + e.message);
         if (scriptURL) loadViaScript(callback);
         else { setSyncDot('error'); if (callback) callback(); }
       });
@@ -954,9 +955,8 @@ function renderBadgesInGrid(list, gridId) {
   var grid = document.getElementById(gridId);
   if (!grid) return;
   grid.innerHTML = '';
-  // Reset selection state
-  selectedCards = {};
-  updateSelectionUI();
+  // Preserve existing selections across searches
+  // selectedCards persists between renders
   list.forEach(function(m) {
     var wrap = document.createElement('div');
     wrap.style.cssText = 'position:relative;transition:transform 0.15s;';
@@ -966,6 +966,10 @@ function renderBadgesInGrid(list, gridId) {
     cb.type = 'checkbox';
     cb.style.cssText = 'position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer;z-index:10;accent-color:var(--navy);';
     cb.checked = !!selectedCards[m.id];
+    if (cb.checked) {
+      wrap.style.outline = '3px solid var(--gold)';
+      wrap.style.borderRadius = '12px';
+    }
     cb.onclick = function(e) {
       e.stopPropagation();
       if (cb.checked) { selectedCards[m.id] = m; } else { delete selectedCards[m.id]; }
@@ -995,7 +999,7 @@ function renderBadgesInGrid(list, gridId) {
       var el = document.getElementById('BQR-' + m.id);
       if (!el) return;
       new QRCode(el, {text: m.id,
-        width: 90, height: 90, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+        width: 120, height: 120, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
     }, 80);
   });
 }
@@ -1148,7 +1152,7 @@ function getCardCSS() {
     + '.id-org-name{font-family:"Cormorant Garamond",Georgia,serif;color:#E8B830;font-size:18px;font-weight:700;letter-spacing:0.05em;line-height:1;}'
     + '.id-org-sub{font-size:8px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.1em;text-transform:uppercase;}'
     + '.id-body{padding:16px 12px 14px;display:flex;gap:10px;align-items:center;}'
-    + '.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;}'
+    + '.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;overflow:hidden;}'
     + '.id-info{flex:1;min-width:0;}'
     + '.id-name{font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4B;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
     + '.id-id{font-size:9px;color:#A8835A;font-family:monospace;margin-top:3px;font-weight:700;letter-spacing:0.04em;}'
