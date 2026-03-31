@@ -917,12 +917,25 @@ function renderBadgesInGrid(list, gridId) {
       wrap.onmouseleave = function() { this.style.transform = 'scale(1)'; };
     }
     grid.appendChild(wrap);
-    setTimeout(function() {
-      var el = document.getElementById('BQR-' + m.id);
-      if (!el) return;
-      new QRCode(el, {text: m.id,
-        width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
-    }, 80);
+    (function(memberId, idx) {
+      setTimeout(function() {
+        var el = document.getElementById('BQR-' + memberId);
+        if (!el) return;
+        try {
+          new QRCode(el, {text: memberId,
+            width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+        } catch(e) {
+          // Retry once after a short delay
+          setTimeout(function() {
+            if (el && !el.querySelector('canvas') && !el.querySelector('img')) {
+              el.innerHTML = '';
+              new QRCode(el, {text: memberId,
+                width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+            }
+          }, 500);
+        }
+      }, 80 + (idx * 5));
+    })(m.id, grid.children.length);
   });
 }
 
