@@ -355,52 +355,51 @@ tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);
     </div>
     <div id="adm-empty" style="display:none;text-align:center;padding:40px;color:var(--muted);">Connect your sheet to see data.</div>
   </div>
-</div>
 
-<!-- PRINT --><!-- PRINT -->
-<div class="panel" id="panel-print">
-  <div id="reprint-bar" style="display:none;background:var(--navy-pale);border:1.5px solid var(--navy3);border-radius:10px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap;">
-    <span style="font-size:13px;font-weight:700;color:var(--navy);">Reprint card for <span id="reprint-bar-name"></span>?</span>
-    <button onclick="var b=document.getElementById('reprint-bar');reprintSingle(b._member);b.style.display='none';" class="btn-primary" style="font-size:12px;padding:7px 16px;">Print</button>
-    <button onclick="document.getElementById('reprint-bar').style.display='none';" class="btn-secondary" style="font-size:12px;padding:7px 14px;">Cancel</button>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
-    <div><div class="section-title">Print Cards</div><div class="section-desc" style="margin-bottom:0;">Search, select, and print just the cards you need</div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <input class="search-bar" type="text" id="print-search" placeholder="Search by name, ID, tabernacle..." oninput="filterPrintGrid()" style="width:240px;">
-      <button class="btn-secondary" onclick="generateAllBadges()">Refresh</button>
-      <button class="btn-gold" onclick="printGridBadges('all-print-grid')">Print All</button>
+  <!-- SCAN HISTORY from Zebra device localStorage -->
+  <div style="margin-top:24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div class="section-title" style="margin-bottom:0;">Scan History (This Device)</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" style="font-size:12px;padding:7px 14px;" onclick="exportScanHistory()">Export CSV</button>
+        <button class="btn-secondary" style="font-size:12px;padding:7px 14px;" onclick="renderScanHistory()">Refresh</button>
+      </div>
+    </div>
+    <div id="scan-history-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr>
+          <th>Day</th><th>Meal</th><th>Total Scanned</th><th>Members</th>
+        </tr></thead>
+        <tbody id="scan-history-tbody"></tbody>
+      </table>
+    </div>
+    <div id="scan-history-detail" style="margin-top:16px;display:none;">
+      <div style="font-size:12px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;" id="scan-detail-title"></div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Member ID</th><th>Name</th><th>Tabernacle</th><th>Time</th></tr></thead>
+          <tbody id="scan-detail-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
-  <!-- Selection toolbar -->
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;background:var(--navy-pale);border-radius:10px;padding:10px 14px;">
-    <input type="checkbox" id="select-all-cards" onchange="toggleSelectAll(this.checked)" style="width:16px;height:16px;cursor:pointer;">
-    <label for="select-all-cards" style="font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;">Select All</label>
-    <span style="color:var(--border);margin:0 4px;">|</span>
-    <span style="font-size:13px;color:var(--mid);"><span id="selected-count">0</span> selected</span>
-    <span style="color:var(--border);margin:0 4px;">|</span>
-    <span style="font-size:13px;color:var(--muted);"><span id="print-count">0</span> shown</span>
-    <button class="btn-primary" onclick="printSelected()" id="print-selected-btn" style="margin-left:auto;display:none;font-size:12px;padding:7px 16px;">Print Selected (<span id="print-selected-count">0</span>)</button>
-    <button class="btn-secondary" onclick="clearSelection()" style="font-size:12px;padding:7px 14px;display:none;" id="clear-sel-btn">Clear</button>
-  </div>
-    <div id="all-print-grid"  <div id="all-print-grid" class="print-grid"></div>
-  <div id="no-print" style="display:none;text-align:center;padding:60px;color:var(--muted);">Register members or connect your sheet to generate cards.</div>
 </div>
 
 
 <script>
 var TABS_LIST = ['onsite','checkin','members','admin','print','setup'];
-var TABERNACLES = ['Anchorage', 'Alexandria', 'Atlanta', 'Atlantic City', 'Baltimore', 'Belleville', 'Boston', 'Brooklyn', 'Charlotte', 'Chicago', 'Cincinnati', 'Cleveland', 'Detroit', 'Greensboro', 'Harrisburg', 'Hartford', 'Jacksonville', 'Los Angeles', 'Miami', 'Mt. Vernon', 'Newark - Plainfield', 'Philadelphia', 'Providence', 'Richmond', 'Roanoke', 'Rochester', 'Salisbury', 'Southern Pines', 'Washington', 'Wilmington', 'Zanesville'];
-var DAYS_LIST = ['Mar31', 'Apr1', 'Apr2', 'Apr3', 'Apr4', 'Apr5', 'Apr6', 'Apr7', 'Apr8'];
-var DAY_LABELS = {'Mar31': 'Mar 31', 'Apr1': 'Apr 1', 'Apr2': 'Apr 2', 'Apr3': 'Apr 3', 'Apr4': 'Apr 4', 'Apr5': 'Apr 5', 'Apr6': 'Apr 6', 'Apr7': 'Apr 7', 'Apr8': 'Apr 8'};
+var TABERNACLES = ['Anchorage','Alexandria','Atlanta','Atlantic City','Baltimore','Belleville','Boston','Brooklyn','Charlotte','Chicago','Cincinnati','Cleveland','Detroit','Greensboro','Harrisburg','Hartford','Jacksonville','Los Angeles','Miami','Mt. Vernon','Newark - Plainfield','Philadelphia','Providence','Richmond','Roanoke','Rochester','Salisbury','Southern Pines','Washington','Wilmington','Zanesville'];
+var DAYS_LIST = ['Seder','Mar31','Apr1','Apr2','Apr3','Apr4','Apr5','Apr6','Apr7','Apr8'];
+var DAY_LABELS = {Seder:'Seder Night',Mar31:'Mar 31',Apr1:'Apr 1',Apr2:'Apr 2',Apr3:'Apr 3',Apr4:'Apr 4',Apr5:'Apr 5',Apr6:'Apr 6',Apr7:'Apr 7',Apr8:'Apr 8'};
 var PAY = {full:'Paid in Full', balance:'Balance Due', '':'--'};
 var AGE = {adult:'Adult', senior:'Senior', child:'Child', '':'--'};
-
 var csvURL = localStorage.getItem('passover_csv_url') || '';
 var scriptURL = localStorage.getItem('passover_sheet_url') || '';
 var members = [];
 var selPayment = '';
 var mmCurrentId = '';
+var selectedCards = {};
 
 window.addEventListener('DOMContentLoaded', function() {
   var ci = document.getElementById('csv-url-input');
@@ -421,7 +420,6 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-/* TABS */
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(function(t, i) {
     t.classList.toggle('active', TABS_LIST[i] === tab);
@@ -429,10 +427,11 @@ function switchTab(tab) {
   document.querySelectorAll('.panel').forEach(function(p) {
     p.classList.remove('active');
   });
-  document.getElementById('panel-' + tab).classList.add('active');
+  var panel = document.getElementById('panel-' + tab);
+  if (panel) panel.classList.add('active');
   if (tab === 'members') loadFromSheet(renderMembers);
   if (tab === 'checkin') loadFromSheet(renderCheckin);
-  if (tab === 'admin') loadFromSheet(renderAdmin);
+  if (tab === 'admin') { loadFromSheet(renderAdmin); renderScanHistory(); }
   if (tab === 'print') loadFromSheet(function() { generateAllBadges(); });
 }
 
@@ -444,7 +443,7 @@ function manualRefresh() {
       if (p && p.classList.contains('active')) {
         if (panels[i] === 'members') renderMembers();
         else if (panels[i] === 'checkin') renderCheckin();
-        else if (panels[i] === 'admin') renderAdmin();
+        else if (panels[i] === 'admin') { renderAdmin(); renderScanHistory(); }
         else if (panels[i] === 'print') generateAllBadges();
         break;
       }
@@ -453,7 +452,6 @@ function manualRefresh() {
   });
 }
 
-/* SYNC */
 function setSyncDot(state) {
   var el = document.getElementById('sync-dot');
   if (!el) return;
@@ -466,51 +464,57 @@ function setSyncDot(state) {
 function loadFromSheet(callback) {
   if (!csvURL && !scriptURL) { if (callback) callback(); return; }
   setSyncDot('syncing');
-  var isCSV = csvURL && csvURL.indexOf('output=csv') >= 0;
-  if (isCSV) {
-    var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
-    fetch(csvURL + sep + 't=' + Date.now())
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        var rows = parseCSV(text);
-        if (rows.length > 1) {
-          var hdrs = rows[0].map(function(h) { return h.trim(); });
-          members = rows.slice(1).map(function(row) {
-            var o = {};
-            hdrs.forEach(function(h, i) { o[h] = (row[i] || '').trim(); });
-            return normMember(o);
-          }).filter(function(m) { return m.id && m.firstName; });
-          // Save to localStorage for scanner to use
+  var sep = csvURL.indexOf('?') >= 0 ? '&' : '?';
+  fetch(csvURL + sep + 't=' + Date.now())
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      // Strip BOM
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      text = text.split('\r\n').join('\n').split('\r').join('\n');
+      var rows = parseCSV(text);
+      if (rows.length > 1) {
+        var hdrs = rows[0].map(function(h) {
+          if (h.charCodeAt(0) === 0xFEFF) h = h.slice(1);
+          return h.split('\r').join('').split('\n').join('').split('"').join('').trim();
+        });
+        var loaded = [];
+        for (var i = 1; i < rows.length; i++) {
+          var row = rows[i], o = {};
+          hdrs.forEach(function(h, idx) {
+            o[h] = (row[idx] || '').split('\r').join('').split('\n').join('').trim();
+          });
+          var m = normMember(o);
+          if (m.id && m.firstName) loaded.push(m);
+        }
+        if (loaded.length > 0) {
+          members = loaded;
           localStorage.setItem('cogasoc_members', JSON.stringify(members));
-          localStorage.setItem('cogasoc_members_source', 'registration portal');
+          localStorage.setItem('cogasoc_members_source', 'sheet sync');
           setSyncDot('live');
         } else {
           setSyncDot('error');
         }
-        if (callback) callback();
-      })
-      .catch(function(e) {
-        diag && diag('CSV fetch error: ' + e.message);
-        if (scriptURL) loadViaScript(callback);
-        else { setSyncDot('error'); if (callback) callback(); }
-      });
-  } else {
-    loadViaScript(callback);
-  }
-}
-
-function loadViaScript(callback) {
-  if (!scriptURL) { if (callback) callback(); return; }
-  fetch(scriptURL + '?t=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.guests && data.guests.length > 0) {
-        members = data.guests.map(normMember).filter(function(m) { return m.id && m.firstName; });
-        setSyncDot('live');
-      } else { setSyncDot('error'); }
+      } else {
+        setSyncDot('error');
+      }
       if (callback) callback();
     })
-    .catch(function() { setSyncDot('error'); if (callback) callback(); });
+    .catch(function() {
+      // Try localStorage fallback
+      var stored = localStorage.getItem('cogasoc_members');
+      if (stored) {
+        try {
+          var parsed = JSON.parse(stored);
+          if (parsed && parsed.length > 0) {
+            members = parsed.map(normMember).filter(function(m) { return m.id && m.firstName; });
+            setSyncDot('live');
+          }
+        } catch(e) {}
+      } else {
+        setSyncDot('error');
+      }
+      if (callback) callback();
+    });
 }
 
 function normMember(g) {
@@ -531,8 +535,7 @@ function normMember(g) {
 }
 
 function parseCSV(text) {
-  var rows = [];
-  var lines = text.split('\n');
+  var rows = [], lines = text.split('\n');
   for (var li = 0; li < lines.length; li++) {
     var line = lines[li];
     if (!line.trim()) continue;
@@ -547,20 +550,6 @@ function parseCSV(text) {
     rows.push(row);
   }
   return rows;
-}
-
-/* REGISTER */
-function selPay(el) {
-  document.querySelectorAll('#panel-onsite .pill').forEach(function(p) { p.className = 'pill'; });
-  selPayment = el.dataset.val;
-  el.classList.add('sel-' + selPayment);
-  document.getElementById('balance-field').style.display = selPayment === 'balance' ? 'flex' : 'none';
-}
-
-function generateID() {
-  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', id = 'PS';
-  for (var i = 0; i < 6; i++) id += c[Math.floor(Math.random() * c.length)];
-  return id;
 }
 
 function searchExistingByName() {
@@ -582,13 +571,15 @@ function searchExistingByName() {
     var item = document.createElement('div');
     item.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;';
     item.innerHTML = '<div><span style="font-weight:700;color:var(--navy);">' + m.firstName + ' ' + m.lastName + '</span>'
-      + (hasBalance ? '<span style="background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Balance Due</span>'
-      : '<span style="background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Paid</span>')
+      + (hasBalance
+        ? '<span style="background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Balance Due</span>'
+        : '<span style="background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">Paid</span>')
       + '</div><span style="font-size:11px;color:var(--muted);">' + (m.tabernacle || '') + ' - tap to load</span>';
     item.onclick = (function(mem) { return function() { selectExistingMember(mem.id); }; })(m);
     box.appendChild(item);
   });
 }
+
 function selectExistingMember(id) {
   var m = members.find(function(x) { return x.id === id; });
   if (!m) return;
@@ -600,14 +591,12 @@ function selectExistingMember(id) {
   document.getElementById('agegroup').value = m.ageGroup || '';
   document.getElementById('custom-id').value = m.id;
   document.getElementById('existing-member-results').style.display = 'none';
-  // Show balance info
   var hint = document.getElementById('existing-member-hint');
   if (m.paymentType === 'balance') {
     hint.style.display = 'block';
     hint.style.background = 'var(--amber-bg)';
     hint.style.color = 'var(--amber)';
-    hint.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified') + ' - Select payment type below';
-    // Auto-select balance payment type
+    hint.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified');
     selPayment = 'balance';
     document.querySelectorAll('#panel-onsite .pill').forEach(function(p) { p.className = 'pill'; });
     var balPill = document.querySelector('#panel-onsite .pill[data-val="balance"]');
@@ -617,7 +606,7 @@ function selectExistingMember(id) {
     hint.style.display = 'block';
     hint.style.background = 'var(--green-bg)';
     hint.style.color = 'var(--green)';
-    hint.textContent = 'Found: ' + m.firstName + ' ' + m.lastName + ' (' + m.tabernacle + ') - Paid in Full';
+    hint.textContent = 'Found: ' + m.firstName + ' ' + m.lastName + ' (' + m.tabernacle + ')';
   }
   showToast('Loaded ' + m.firstName + ' ' + m.lastName);
 }
@@ -631,7 +620,6 @@ function lookupExistingMember(val) {
     hint.style.display = 'block';
     hint.style.background = 'var(--amber-bg)';
     hint.style.color = 'var(--amber)';
-    hint.style.border = '1px solid rgba(146,64,14,0.2)';
     hint.textContent = 'Found: ' + m.firstName + ' ' + m.lastName + ' (' + m.tabernacle + ')';
     document.getElementById('fname').value = m.firstName;
     document.getElementById('lname').value = m.lastName;
@@ -639,15 +627,20 @@ function lookupExistingMember(val) {
     document.getElementById('phone').value = m.phone || '';
     document.getElementById('tabernacle').value = m.tabernacle || '';
     document.getElementById('agegroup').value = m.ageGroup || '';
-  } else if (val.length >= 6) {
-    hint.style.display = 'block';
-    hint.style.background = 'var(--green-bg)';
-    hint.style.color = 'var(--green)';
-    hint.style.border = '1px solid rgba(22,163,74,0.2)';
-    hint.textContent = 'New ID: ' + val + ' - will be created';
-  } else {
-    hint.style.display = 'none';
   }
+}
+
+function selPay(el) {
+  document.querySelectorAll('#panel-onsite .pill').forEach(function(p) { p.className = 'pill'; });
+  selPayment = el.dataset.val;
+  el.classList.add('sel-' + selPayment);
+  document.getElementById('balance-field').style.display = selPayment === 'balance' ? 'flex' : 'none';
+}
+
+function generateID() {
+  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', id = 'PS';
+  for (var i = 0; i < 6; i++) id += c[Math.floor(Math.random() * c.length)];
+  return id;
 }
 
 function registerOnsite() {
@@ -659,10 +652,8 @@ function registerOnsite() {
   var id = customId || generateID();
   if (customId && members.find(function(m) { return m.id === id; })) {
     showToast('That ID already exists - opening their profile.');
-    openMemberModal(id);
-    return;
+    openMemberModal(id); return;
   }
-  var balField = document.getElementById('balance-amount');
   var m = {
     id: id, firstName: fn, lastName: ln,
     email: document.getElementById('email').value.trim(),
@@ -670,7 +661,7 @@ function registerOnsite() {
     tabernacle: document.getElementById('tabernacle').value,
     ageGroup: document.getElementById('agegroup').value,
     paymentType: selPayment,
-    balanceNotes: selPayment === 'balance' ? balField.value.trim() : '',
+    balanceNotes: selPayment === 'balance' ? document.getElementById('balance-amount').value.trim() : '',
     checkinStatus: 'pending',
     notes: document.getElementById('notes').value.trim(),
     registeredAt: new Date().toISOString()
@@ -684,14 +675,14 @@ function registerOnsite() {
 
 function clearForm() {
   ['fname','lname','email','phone','notes','balance-amount','custom-id'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = '';
+    var el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('tabernacle').value = '';
   document.getElementById('agegroup').value = '';
   document.getElementById('balance-field').style.display = 'none';
   document.getElementById('card-result').style.display = 'none';
   document.getElementById('existing-member-hint').style.display = 'none';
+  document.getElementById('existing-member-results').style.display = 'none';
   document.querySelectorAll('#panel-onsite .pill').forEach(function(p) { p.className = 'pill'; });
   selPayment = '';
 }
@@ -711,13 +702,11 @@ function showCardResult(m) {
   document.getElementById('d-phone').textContent = m.phone || '--';
   document.getElementById('d-notes').textContent = m.notes || '--';
   var qc = document.getElementById('qr-small'); qc.innerHTML = '';
-  new QRCode(qc, {text: m.id,
-    width: 90, height: 90, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+  new QRCode(qc, {text: m.id, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
   document.getElementById('card-result').scrollIntoView({behavior: 'smooth', block: 'nearest'});
   showToast(m.firstName + ' registered!');
 }
 
-/* CHECK IN */
 function renderCheckin() {
   var q = (document.getElementById('ci-search').value || '').toLowerCase();
   var ftab = document.getElementById('ci-ftab').value;
@@ -737,28 +726,22 @@ function renderCheckin() {
   tbody.innerHTML = filtered.map(function(m) {
     var isIn = m.checkinStatus === 'checkedin';
     var hasBalance = m.paymentType === 'balance';
-    var payTag = hasBalance ? 'tag-balance' : 'tag-paid';
-    var payLbl = hasBalance ? 'Balance Due' : 'Paid in Full';
-    var ciTag = isIn ? 'tag-in' : 'tag-pending';
-    var ciLbl = isIn ? 'Checked In' : 'Pending';
     var nameCell = '<span data-mid="' + m.id + '" style="cursor:pointer;color:var(--navy2);font-weight:700;text-decoration:underline dotted;">' + m.firstName + ' ' + m.lastName + '</span>';
     return '<tr>'
       + '<td>' + nameCell + '</td>'
       + '<td><span class="bid">' + m.id + '</span></td>'
       + '<td>' + (m.tabernacle || '--') + '</td>'
       + '<td>' + (AGE[m.ageGroup] || '--') + '</td>'
-      + '<td><span class="tag ' + payTag + '">' + payLbl + '</span></td>'
-      + '<td><span class="tag ' + ciTag + '">' + ciLbl + '</span></td>'
+      + '<td><span class="tag ' + (hasBalance ? 'tag-balance' : 'tag-paid') + '">' + (PAY[m.paymentType] || '--') + '</span></td>'
+      + '<td><span class="tag ' + (isIn ? 'tag-in' : 'tag-pending') + '">' + (isIn ? 'Checked In' : 'Pending') + '</span></td>'
       + '<td>' + (isIn ? '' : '<button class="btn-green" style="font-size:11px;padding:5px 12px;" data-checkin="' + m.id + '">Check In</button>') + '</td>'
       + '</tr>';
   }).join('');
-  // Wire up checkin buttons
   tbody.querySelectorAll('[data-checkin]').forEach(function(btn) {
     btn.onclick = function(e) { e.stopPropagation(); openMemberModal(btn.getAttribute('data-checkin')); };
   });
 }
 
-/* MEMBER LIST */
 function renderMembers() {
   var q = (document.getElementById('ml-search').value || '').toLowerCase();
   var ftab = document.getElementById('ml-ftab').value;
@@ -774,24 +757,17 @@ function renderMembers() {
   if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = filtered.map(function(m) {
-    var payTag = m.paymentType === 'balance' ? 'tag-balance' : 'tag-paid';
-    var ciTag = m.checkinStatus === 'checkedin' ? 'tag-in' : 'tag-pending';
     var nameCell = '<span data-mid="' + m.id + '" style="cursor:pointer;color:var(--navy2);font-weight:700;text-decoration:underline dotted;">' + m.firstName + ' ' + m.lastName + '</span>';
     return '<tr>'
       + '<td>' + nameCell + '</td>'
       + '<td><span class="bid">' + m.id + '</span></td>'
       + '<td>' + (m.tabernacle || '--') + '</td>'
       + '<td>' + (AGE[m.ageGroup] || '--') + '</td>'
-      + '<td><span class="tag ' + payTag + '">' + (PAY[m.paymentType] || '--') + '</span></td>'
-      + '<td><span class="tag ' + ciTag + '">' + (m.checkinStatus === 'checkedin' ? 'Checked In' : 'Pending') + '</span></td>'
+      + '<td><span class="tag ' + (m.paymentType === 'balance' ? 'tag-balance' : 'tag-paid') + '">' + (PAY[m.paymentType] || '--') + '</span></td>'
+      + '<td><span class="tag ' + (m.checkinStatus === 'checkedin' ? 'tag-in' : 'tag-pending') + '">' + (m.checkinStatus === 'checkedin' ? 'Checked In' : 'Pending') + '</span></td>'
       + '<td style="font-size:12px;color:var(--muted)">' + (m.email || '--') + '</td>'
-      + '<td style="font-size:12px;color:var(--muted)">' + (m.phone || '--') + '</td>'
-      + '<td><button data-remove="' + m.id + '" class="btn-danger">Remove</button></td>'
       + '</tr>';
   }).join('');
-  tbody.querySelectorAll('[data-remove]').forEach(function(btn) {
-    btn.onclick = function(e) { e.stopPropagation(); removeMember(btn.getAttribute('data-remove')); };
-  });
 }
 
 function removeMember(id) {
@@ -800,21 +776,25 @@ function removeMember(id) {
   renderMembers();
 }
 
-/* ADMIN */
 function renderAdmin() {
   var day = document.getElementById('admin-day').value;
   var total = members.length;
   var checkedIn = members.filter(function(m) { return m.checkinStatus === 'checkedin'; }).length;
   var paid = members.filter(function(m) { return m.paymentType === 'full'; }).length;
   var balance = members.filter(function(m) { return m.paymentType === 'balance'; }).length;
-  var bCount = members.filter(function(m) { return m['B_' + day] === 'USED'; }).length;
-  var lCount = members.filter(function(m) { return m['L_' + day] === 'USED'; }).length;
   document.getElementById('adm-total').textContent = total;
   document.getElementById('adm-checkedin').textContent = checkedIn;
   document.getElementById('adm-ci-pct').textContent = total ? Math.round(checkedIn/total*100) + '% arrived' : '';
   document.getElementById('adm-paid').textContent = paid;
   document.getElementById('adm-paid-pct').textContent = total ? Math.round(paid/total*100) + '% of members' : '';
   document.getElementById('adm-balance').textContent = balance;
+  // Scan counts from localStorage
+  var bKey = 'scan_B_' + day, lKey = 'scan_L_' + day;
+  var bScans = {}; var lScans = {};
+  try { bScans = JSON.parse(localStorage.getItem(bKey) || '{}'); } catch(e) {}
+  try { lScans = JSON.parse(localStorage.getItem(lKey) || '{}'); } catch(e) {}
+  var bCount = Object.keys(bScans).length;
+  var lCount = Object.keys(lScans).length;
   var t = total || 1;
   document.getElementById('prog-b').style.width = (bCount/t*100) + '%';
   document.getElementById('prog-l').style.width = (lCount/t*100) + '%';
@@ -840,9 +820,13 @@ function renderAdminTable() {
   var empty = document.getElementById('adm-empty');
   if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
+  var bKey = 'scan_B_' + day, lKey = 'scan_L_' + day;
+  var bScans = {}; var lScans = {};
+  try { bScans = JSON.parse(localStorage.getItem(bKey) || '{}'); } catch(e) {}
+  try { lScans = JSON.parse(localStorage.getItem(lKey) || '{}'); } catch(e) {}
   tbody.innerHTML = filtered.map(function(m) {
-    var bUsed = m['B_' + day] === 'USED';
-    var lUsed = m['L_' + day] === 'USED';
+    var bUsed = !!bScans[String(m.id)];
+    var lUsed = !!lScans[String(m.id)];
     var nameCell = '<span data-mid="' + m.id + '" style="cursor:pointer;color:var(--navy2);font-weight:700;text-decoration:underline dotted;">' + m.firstName + ' ' + m.lastName + '</span>';
     return '<tr>'
       + '<td>' + nameCell + '</td>'
@@ -856,20 +840,126 @@ function renderAdminTable() {
   }).join('');
 }
 
-/* BADGES */
+function renderScanHistory() {
+  var rows = [];
+  var totalScanned = 0;
+  var summary = {};
+  DAYS_LIST.forEach(function(day) {
+    ['B','L'].forEach(function(meal) {
+      var key = 'scan_' + meal + '_' + day;
+      var data = localStorage.getItem(key);
+      if (!data) return;
+      try {
+        var scans = JSON.parse(data);
+        var ids = Object.keys(scans);
+        if (!ids.length) return;
+        totalScanned += ids.length;
+        var mealLabel = meal === 'B' ? 'Breakfast' : (day === 'Seder' ? 'Seder' : 'Lunch');
+        rows.push({day:day, dayLabel:DAY_LABELS[day], meal:mealLabel, key:key, scans:scans, count:ids.length});
+        if (!summary[day]) summary[day] = 0;
+        summary[day] += ids.length;
+      } catch(e) {}
+    });
+  });
+  var summaryEl = document.getElementById('scan-history-summary');
+  if (summaryEl) {
+    var out = '<div style="background:var(--navy-pale);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;">'
+      + '<div style="font-size:28px;font-weight:700;color:var(--navy);font-family:Cormorant Garamond,serif;">' + totalScanned + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">Total Meals Served</div>'
+      + '</div>';
+    Object.keys(summary).forEach(function(day) {
+      out += '<div style="background:var(--green-bg);border:1px solid rgba(22,163,74,0.2);border-radius:10px;padding:12px 16px;text-align:center;">'
+        + '<div style="font-size:24px;font-weight:700;color:var(--green);font-family:Cormorant Garamond,serif;">' + summary[day] + '</div>'
+        + '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">' + DAY_LABELS[day] + '</div>'
+        + '</div>';
+    });
+    summaryEl.innerHTML = out;
+  }
+  var tbody = document.getElementById('scan-history-tbody');
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">No scans on this device. Scans are stored on the Zebra scanner device.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  rows.forEach(function(r) {
+    var names = Object.keys(r.scans).map(function(id) {
+      var m = members.find(function(x) { return String(x.id) === String(id); });
+      return m ? m.firstName + ' ' + m.lastName : id;
+    });
+    var preview = names.slice(0,3).join(', ') + (names.length > 3 ? ' +' + (names.length-3) + ' more' : '');
+    var tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.innerHTML = '<td>' + r.dayLabel + '</td>'
+      + '<td>' + r.meal + '</td>'
+      + '<td><strong>' + r.count + '</strong></td>'
+      + '<td style="font-size:11px;color:var(--muted);">' + preview + '</td>';
+    tr.onclick = (function(key, label) {
+      return function() { showScanDetail(key, label); };
+    })(r.key, r.dayLabel + ' ' + r.meal);
+    tbody.appendChild(tr);
+  });
+}
+
+function showScanDetail(key, label) {
+  var data = localStorage.getItem(key);
+  if (!data) return;
+  try {
+    var scans = JSON.parse(data);
+    var detail = document.getElementById('scan-history-detail');
+    var tbody = document.getElementById('scan-detail-tbody');
+    var title = document.getElementById('scan-detail-title');
+    title.textContent = label + ' - ' + Object.keys(scans).length + ' scans';
+    tbody.innerHTML = Object.keys(scans).map(function(id) {
+      var m = members.find(function(x) { return String(x.id) === String(id); });
+      var name = m ? m.firstName + ' ' + m.lastName : 'Unknown';
+      var tab = m ? (m.tabernacle || '--') : '--';
+      var time = new Date(scans[id]).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      return '<tr><td><span class="bid">' + id + '</span></td><td>' + name + '</td><td>' + tab + '</td><td>' + time + '</td></tr>';
+    }).join('');
+    detail.style.display = 'block';
+    detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+  } catch(e) {}
+}
+
+function exportScanHistory() {
+  var csvRows = ['Day,Meal,MemberID,Name,Tabernacle,Time'];
+  DAYS_LIST.forEach(function(day) {
+    ['B','L'].forEach(function(meal) {
+      var key = 'scan_' + meal + '_' + day;
+      var data = localStorage.getItem(key);
+      if (!data) return;
+      try {
+        var scans = JSON.parse(data);
+        var mealLabel = meal === 'B' ? 'Breakfast' : 'Lunch';
+        Object.keys(scans).forEach(function(id) {
+          var m = members.find(function(x) { return String(x.id) === String(id); });
+          var name = m ? m.firstName + ' ' + m.lastName : '';
+          var tab = m ? (m.tabernacle || '') : '';
+          var time = new Date(scans[id]).toLocaleString();
+          var row = [day, mealLabel, id, name, tab, time];
+          csvRows.push(row.map(function(v) { return '"' + String(v).split('"').join('""') + '"'; }).join(','));
+        });
+      } catch(e) {}
+    });
+  });
+  var csv = csvRows.join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'cogasoc_scans_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('Scan history exported!');
+}
+
 function makeBadge(m) {
   return '<div class="id-card">'
-    + '<div class="id-top"><div class="id-org"><div class="id-org-name">COGASOC</div><div class="id-org-sub">COGASOC Meal Card</div></div><div class="id-gold-bar"></div></div>'
+    + '<div class="id-top"><div class="id-org"><div class="id-org-name">COGASOC</div><div class="id-org-sub">COGASOC MEAL CARD</div></div><div class="id-gold-bar"></div></div>'
     + '<div class="id-arc"></div>'
-    + '<div class="id-body">'
-    + '<div class="id-qr" id="BQR-' + m.id + '"></div>'
-    + '<div class="id-info">'
-    + '<div class="id-name">' + m.firstName + ' ' + m.lastName + '</div>'
+    + '<div class="id-body"><div class="id-qr" id="BQR-' + m.id + '"></div>'
+    + '<div class="id-info"><div class="id-name">' + m.firstName + ' ' + m.lastName + '</div>'
     + '<div class="id-id">ID: ' + m.id + '</div>'
     + '<div class="id-badges"><div class="id-badge gold">' + (m.tabernacle || '--') + '</div><div class="id-badge">' + (AGE[m.ageGroup] || '--') + '</div></div>'
-    + '</div>'
-    + '</div>'
-
+    + '</div></div>'
     + '</div>';
 }
 
@@ -877,21 +967,15 @@ function renderBadgesInGrid(list, gridId) {
   var grid = document.getElementById(gridId);
   if (!grid) return;
   grid.innerHTML = '';
-  // Preserve existing selections across searches
-  // selectedCards persists between renders
-  list.forEach(function(m) {
+  list.forEach(function(m, idx) {
     var wrap = document.createElement('div');
     wrap.style.cssText = 'position:relative;transition:transform 0.15s;';
     wrap.setAttribute('data-card-id', m.id);
-    // Checkbox overlay
     var cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.style.cssText = 'position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer;z-index:10;accent-color:var(--navy);';
     cb.checked = !!selectedCards[m.id];
-    if (cb.checked) {
-      wrap.style.outline = '3px solid var(--gold)';
-      wrap.style.borderRadius = '12px';
-    }
+    if (cb.checked) { wrap.style.outline = '3px solid var(--gold)'; wrap.style.borderRadius = '12px'; }
     cb.onclick = function(e) {
       e.stopPropagation();
       if (cb.checked) { selectedCards[m.id] = m; } else { delete selectedCards[m.id]; }
@@ -917,29 +1001,44 @@ function renderBadgesInGrid(list, gridId) {
       wrap.onmouseleave = function() { this.style.transform = 'scale(1)'; };
     }
     grid.appendChild(wrap);
-    (function(memberId, idx) {
+    // Stagger QR generation to avoid browser overload with 800+ cards
+    (function(memberId, delay) {
       setTimeout(function() {
         var el = document.getElementById('BQR-' + memberId);
         if (!el) return;
         try {
-          new QRCode(el, {text: memberId,
-            width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+          new QRCode(el, {text: memberId, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
         } catch(e) {
-          // Retry once after a short delay
           setTimeout(function() {
             if (el && !el.querySelector('canvas') && !el.querySelector('img')) {
               el.innerHTML = '';
-              new QRCode(el, {text: memberId,
-                width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
+              new QRCode(el, {text: memberId, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
             }
-          }, 500);
+          }, 1000);
         }
-      }, 80 + (idx * 5));
-    })(m.id, grid.children.length);
+      }, 100 + (idx * 4));
+    })(m.id, idx);
   });
 }
 
-var selectedCards = {};
+function generateAllBadges() {
+  var no = document.getElementById('no-print');
+  if (!members.length) { document.getElementById('all-print-grid').innerHTML = ''; if(no) no.style.display = 'block'; return; }
+  if (no) no.style.display = 'none';
+  renderBadgesInGrid(members, 'all-print-grid');
+  var cnt = document.getElementById('print-count');
+  if (cnt) cnt.textContent = members.length;
+}
+
+function filterPrintGrid() {
+  var q = (document.getElementById('print-search').value || '').toLowerCase();
+  var filtered = q ? members.filter(function(m) {
+    return (m.firstName + ' ' + m.lastName + ' ' + m.id + ' ' + (m.tabernacle || '')).toLowerCase().includes(q);
+  }) : members;
+  renderBadgesInGrid(filtered, 'all-print-grid');
+  var cnt = document.getElementById('print-count');
+  if (cnt) cnt.textContent = filtered.length;
+}
 
 function toggleSelectAll(checked) {
   var grid = document.getElementById('all-print-grid');
@@ -966,21 +1065,51 @@ function clearSelection() {
 function updateSelectionUI() {
   var count = Object.keys(selectedCards).length;
   document.getElementById('selected-count').textContent = count;
-  var printBtn = document.getElementById('print-selected-btn');
-  var clearBtn = document.getElementById('clear-sel-btn');
   document.getElementById('print-selected-count').textContent = count;
-  if (count > 0) {
-    printBtn.style.display = 'inline-block';
-    clearBtn.style.display = 'inline-block';
-  } else {
-    printBtn.style.display = 'none';
-    clearBtn.style.display = 'none';
+  document.getElementById('print-selected-btn').style.display = count > 0 ? 'inline-block' : 'none';
+  document.getElementById('clear-sel-btn').style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+function openReprintConfirm(m) {
+  var bar = document.getElementById('reprint-bar');
+  if (!bar) { reprintSingle(m); return; }
+  var nameEl = document.getElementById('reprint-bar-name');
+  if (nameEl) nameEl.textContent = m.firstName + ' ' + m.lastName;
+  bar._member = m;
+  bar.style.display = 'flex';
+  bar.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function reprintSingle(m) {
+  var tmp = document.createElement('div');
+  tmp.style.display = 'none';
+  tmp.innerHTML = makeBadge(m).replace('id="BQR-' + m.id + '"', 'id="RPR-' + m.id + '"');
+  document.body.appendChild(tmp);
+  var badgeEl = tmp.querySelector('.id-card');
+  var qrEl = tmp.querySelector('.id-qr');
+  if (qrEl) {
+    new QRCode(qrEl, {text: m.id, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
   }
+  var attempts = 0;
+  var waitQR = setInterval(function() {
+    attempts++;
+    var hasQR = qrEl && (qrEl.querySelector('canvas') || qrEl.querySelector('img'));
+    if (hasQR || attempts > 20) {
+      clearInterval(waitQR);
+      var css = getCardCSS();
+      var style = '@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;width:3.5in;height:2in;display:flex;justify-content:center;align-items:center;overflow:hidden;}.id-card{border-radius:0!important;box-shadow:none!important;}';
+      var w = window.open('', '_blank', 'width=420,height=340');
+      w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + badgeEl.outerHTML + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},800);};</' + 'script></body></html>');
+      w.document.close();
+      document.body.removeChild(tmp);
+    }
+  }, 100);
 }
 
 function printSelected() {
   var sel = Object.values(selectedCards);
   if (!sel.length) { showToast('No cards selected.'); return; }
+  showToast('Preparing ' + sel.length + ' cards...');
   var css = getCardCSS();
   var style = [
     '@page{size:8.5in 11in;margin:0;}',
@@ -991,107 +1120,68 @@ function printSelected() {
     '.card-cell{width:3.5in;height:2in;display:flex;align-items:center;justify-content:center;overflow:hidden;}',
     '.id-card{width:3.3in!important;height:1.85in!important;border-radius:8px!important;box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;page-break-inside:avoid;overflow:hidden;flex-shrink:0;}'
   ].join('');
-  // Build temp grid with QR codes
   var tmp = document.createElement('div');
   tmp.style.display = 'none';
   document.body.appendChild(tmp);
   sel.forEach(function(m) {
     var d = document.createElement('div');
-    d.innerHTML = makeBadge(m).replace('id="BQR-'+m.id+'"','id="PQRR-'+m.id+'"');
+    d.innerHTML = makeBadge(m).replace('id="BQR-' + m.id + '"', 'id="PSL-' + m.id + '"');
     tmp.appendChild(d);
-  });
-  // Generate QRs then print
-  var pending = sel.length;
-  sel.forEach(function(m) {
-    setTimeout(function() {
-      var el = document.getElementById('PQRR-'+m.id);
-      if (el) new QRCode(el,{text:m.id,width:80,height:80,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H});
-      pending--;
-      if (pending === 0) {
-        var checkCount = 0;
-        // Wait for all QR codes to actually render before printing
-        var checkReady = setInterval(function() {
-          var allQrs = tmp.querySelectorAll('.id-qr');
-          var ready = true;
-          allQrs.forEach(function(qr) {
-            if (!qr.querySelector('canvas') && !qr.querySelector('img')) ready = false;
-          });
-          if (ready || ++checkCount > 40) {
-            clearInterval(checkReady);
-            var allCards = Array.from(tmp.querySelectorAll('.id-card'));
-            var pages = [];
-            for (var i=0;i<allCards.length;i+=10) pages.push(allCards.slice(i,i+10));
-            var pagesHtml = pages.map(function(pageCards) {
-              var cells = pageCards.map(function(c){return '<div class="card-cell">'+c.outerHTML+'</div>';}).join('');
-              for (var p=pageCards.length;p<10;p++) cells += '<div class="card-cell"></div>';
-              return '<div class="avery-page"><div class="avery-grid">'+cells+'</div></div>';
-            }).join('');
-            document.body.removeChild(tmp);
-            var w = window.open('','_blank');
-            w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'<style>'+style+'</style></head><body>'+pagesHtml+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},1200);};</'+'script></body></html>');
-            w.document.close();
-          }
-        }, 200);
-      }
-    }, 150);
-  });
-  showToast('Preparing ' + sel.length + ' cards for print...');
-}
-
-function generateAllBadges() {
-  var no = document.getElementById('no-print');
-  if (!members.length) { document.getElementById('all-print-grid').innerHTML = ''; if(no) no.style.display = 'block'; return; }
-  if (no) no.style.display = 'none';
-  renderBadgesInGrid(members, 'all-print-grid');
-  var cnt = document.getElementById('print-count');
-  if (cnt) cnt.textContent = members.length;
-}
-
-function filterPrintGrid() {
-  var q = (document.getElementById('print-search').value || '').toLowerCase();
-  var filtered = q ? members.filter(function(m) {
-    return (m.firstName + ' ' + m.lastName + ' ' + m.id + ' ' + (m.tabernacle || '')).toLowerCase().includes(q);
-  }) : members;
-  renderBadgesInGrid(filtered, 'all-print-grid');
-  var cnt = document.getElementById('print-count');
-  if (cnt) cnt.textContent = filtered.length;
-}
-
-function openReprintConfirm(m) {
-  var bar = document.getElementById('reprint-bar');
-  if (!bar) { reprintSingle(m); return; }
-  var nameEl = document.getElementById('reprint-bar-name');
-  if (nameEl) nameEl.textContent = m.firstName + ' ' + m.lastName;
-  bar._member = m;
-  bar.style.display = 'flex';
-  bar.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-}
-
-function reprintSingle(m) {
-  var tmp = document.createElement('div');
-  tmp.innerHTML = makeBadge(m);
-  document.body.appendChild(tmp);
-  var badgeEl = tmp.querySelector('.id-card');
-  var qrEl = tmp.querySelector('.id-qr');
-  if (qrEl) {
-    new QRCode(qrEl, {text: m.id,
-      width: 90, height: 90, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
-  }
-  var _attempts = 0;
-  var _waitQR = setInterval(function() {
-    _attempts++;
-    var _hasQR = qrEl && (qrEl.querySelector('canvas') || qrEl.querySelector('img'));
-    if (_hasQR || _attempts > 15) {
-      clearInterval(_waitQR);
-      var css = getCardCSS();
-      var w = window.open('', '_blank', 'width=420,height=340');
-      var printStyle = '@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;width:3.5in;height:2in;display:flex;justify-content:center;align-items:center;overflow:hidden;}.id-card{border-radius:0!important;box-shadow:none!important;}';
-      w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + printStyle + '</style></head><body>' + badgeEl.outerHTML + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},800);};<\/' + 'script></body></html>');
-      w.document.close();
-      document.body.removeChild(tmp);
+    var qrEl = d.querySelector('.id-qr');
+    if (qrEl) {
+      new QRCode(qrEl, {text: m.id, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H});
     }
-  }, 100);
+  });
+  var checkCount = 0;
+  var checkReady = setInterval(function() {
+    checkCount++;
+    var allQrs = tmp.querySelectorAll('.id-qr');
+    var ready = true;
+    allQrs.forEach(function(qr) { if (!qr.querySelector('canvas') && !qr.querySelector('img')) ready = false; });
+    if (ready || checkCount > 30) {
+      clearInterval(checkReady);
+      var allCards = Array.from(tmp.querySelectorAll('.id-card'));
+      var pages = [];
+      for (var i = 0; i < allCards.length; i += 10) pages.push(allCards.slice(i, i+10));
+      var pagesHtml = pages.map(function(pageCards) {
+        var cells = pageCards.map(function(c) { return '<div class="card-cell">' + c.outerHTML + '</div>'; }).join('');
+        for (var p = pageCards.length; p < 10; p++) cells += '<div class="card-cell"></div>';
+        return '<div class="avery-page"><div class="avery-grid">' + cells + '</div></div>';
+      }).join('');
+      document.body.removeChild(tmp);
+      var w = window.open('', '_blank');
+      w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + pagesHtml + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},1200);};</' + 'script></body></html>');
+      w.document.close();
+    }
+  }, 200);
 }
+
+function printGridBadges(gridId) {
+  var grid = document.getElementById(gridId);
+  if (!grid || !grid.children.length) { showToast('No cards to print.'); return; }
+  var css = getCardCSS();
+  var style = [
+    '@page{size:8.5in 11in;margin:0;}',
+    'html,body{margin:0;padding:0;}',
+    '.avery-page{width:8.5in;height:11in;position:relative;page-break-after:always;page-break-inside:avoid;}',
+    '.avery-page:last-child{page-break-after:auto;}',
+    '.avery-grid{position:absolute;top:0.5in;left:0.75in;width:7in;display:grid;grid-template-columns:3.5in 3.5in;grid-template-rows:repeat(5,2in);column-gap:0;row-gap:0;}',
+    '.card-cell{width:3.5in;height:2in;display:flex;align-items:center;justify-content:center;overflow:hidden;}',
+    '.id-card{width:3.3in!important;height:1.85in!important;border-radius:8px!important;box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;page-break-inside:avoid;overflow:hidden;flex-shrink:0;}'
+  ].join('');
+  var allCards = Array.from(grid.querySelectorAll('.id-card'));
+  var pages = [];
+  for (var i = 0; i < allCards.length; i += 10) pages.push(allCards.slice(i, i+10));
+  var pagesHtml = pages.map(function(pageCards) {
+    var cells = pageCards.map(function(c) { return '<div class="card-cell">' + c.outerHTML + '</div>'; }).join('');
+    for (var p = pageCards.length; p < 10; p++) cells += '<div class="card-cell"></div>';
+    return '<div class="avery-page"><div class="avery-grid">' + cells + '</div></div>';
+  }).join('');
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + pagesHtml + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};</' + 'script></body></html>');
+  w.document.close();
+}
+
 function getCardCSS() {
   return '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">'
     + '<style>'
@@ -1100,86 +1190,22 @@ function getCardCSS() {
     + '.id-card{width:3.5in;height:2in;border-radius:0;overflow:hidden;position:relative;font-family:Nunito,sans-serif;background:#fff;page-break-inside:avoid;}'
     + '.id-top{background:#1B2E4B;height:48px;position:relative;display:flex;align-items:center;padding:0 14px;}'
     + '.id-arc{position:absolute;bottom:-10px;left:0;right:0;height:20px;background:#1B2E4B;border-radius:0 0 50% 50%;z-index:1;}'
-    + '.id-gold-bar{height:3px;background:#C9991A;position:absolute;bottom:0;left:0;right:0;}'
+    + '.id-gold-bar{height:3px;background:linear-gradient(90deg,#C9991A,#E8B830,#C9991A);position:absolute;bottom:0;left:0;right:0;}'
     + '.id-org{z-index:2;}'
-    + '.id-org-name{font-family:"Cormorant Garamond",Georgia,serif;color:#E8B830;font-size:18px;font-weight:700;letter-spacing:0.05em;line-height:1;}'
+    + '.id-org-name{font-family:Cormorant Garamond,Georgia,serif;color:#E8B830;font-size:18px;font-weight:700;letter-spacing:0.05em;line-height:1;}'
     + '.id-org-sub{font-size:8px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.1em;text-transform:uppercase;}'
     + '.id-body{padding:16px 12px 14px;display:flex;gap:10px;align-items:center;}'
-    + '.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;overflow:hidden;}'
+    + '.id-qr{flex-shrink:0;background:#fff;border:2px solid #111;border-radius:3px;padding:2px;line-height:0;width:86px;height:86px;overflow:hidden;}'
     + '.id-info{flex:1;min-width:0;}'
-    + '.id-name{font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4B;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+    + '.id-name{font-family:Cormorant Garamond,Georgia,serif;font-size:18px;font-weight:700;color:#1B2E4B;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
     + '.id-id{font-size:9px;color:#A8835A;font-family:monospace;margin-top:3px;font-weight:700;letter-spacing:0.04em;}'
     + '.id-badges{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}'
     + '.id-badge{background:#EBF0F7;border-radius:4px;padding:3px 8px;font-size:8px;font-weight:700;color:#2A4570;text-transform:uppercase;}'
     + '.id-badge.gold{background:#FDF6E3;color:#7A5C3A;}'
     + '.id-footer{display:none;}'
-    + '@media print{@page{size:3.5in 2in;margin:0;}body{margin:0;padding:0;}}'
     + '</style>';
 }
 
-function printGridBadges(gridId) {
-  var grid = document.getElementById(gridId);
-  if (!grid || !grid.children.length) { showToast('No cards to print.'); return; }
-  var css = getCardCSS();
-  // Avery 5371: 2 col x 5 row per page, 3.5x2in cards
-  // Each page is a full avery sheet with exact margins
-  var style = [
-    '@page{size:8.5in 11in;margin:0;}',
-    'html,body{margin:0;padding:0;}',
-    '.avery-page{',
-    '  width:8.5in;',
-    '  height:11in;',
-    '  position:relative;',
-    '  page-break-after:always;',
-    '  page-break-inside:avoid;',
-    '}',
-    '.avery-page:last-child{page-break-after:auto;}',
-    '.avery-grid{',
-    '  position:absolute;',
-    '  top:0.5in;',
-    '  left:0.75in;',
-    '  width:7in;',
-    '  display:grid;',
-    '  grid-template-columns:3.5in 3.5in;',
-    '  grid-template-rows:repeat(5,2in);',
-    '  column-gap:0;row-gap:0;',
-    '}',
-    '.card-cell{',
-    '  width:3.5in;height:2in;',
-    '  display:flex;align-items:center;justify-content:center;',
-    '  overflow:hidden;',
-    '}',
-    '.id-card{',
-    '  width:3.3in!important;height:1.85in!important;',
-    '  border-radius:8px!important;',
-    '  box-shadow:0 1px 4px rgba(0,0,0,0.15)!important;',
-    '  page-break-inside:avoid;overflow:hidden;flex-shrink:0;',
-    '}'
-  ].join('');
-
-  // Split cards into groups of 10 (one full Avery sheet per page)
-  var allCards = Array.from(grid.querySelectorAll('.id-card'));
-  var pages = [];
-  for (var i = 0; i < allCards.length; i += 10) {
-    pages.push(allCards.slice(i, i + 10));
-  }
-
-  var pagesHtml = pages.map(function(pageCards) {
-    var cells = pageCards.map(function(c) {
-      return '<div class="card-cell">' + c.outerHTML + '</div>';
-    }).join('');
-    // Pad to 10 cells so grid stays aligned
-    while (pageCards.length < 10) {
-      cells += '<div class="card-cell"></div>';
-      pageCards.push({});
-    }
-    return '<div class="avery-page"><div class="avery-grid">' + cells + '</div></div>';
-  }).join('');
-
-  var w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' + css + '<style>' + style + '</style></head><body>' + pagesHtml + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},800);};</' + 'script></body></html>');
-  w.document.close();
-}
 function openDigital() {
   var id = document.getElementById('d-id').textContent;
   var name = document.getElementById('d-name').textContent;
@@ -1192,20 +1218,19 @@ function copyLink() {
   var name = document.getElementById('d-name').textContent;
   var base = window.location.href.replace('passover-registration.html','passover-badge.html');
   var url = base + '?id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name);
-  navigator.clipboard.writeText(url).then(function(){showToast('Link copied!');}).catch(function(){prompt('Copy:',url);});
+  navigator.clipboard.writeText(url).then(function() { showToast('Link copied!'); }).catch(function() { prompt('Copy:', url); });
 }
 
 function openMemberModal(id) {
   if (!id) return;
   id = String(id).trim();
-  // Try exact match first, then case-insensitive, then trimmed
-  var m = members.find(function(x){ return x.id === id; })
-       || members.find(function(x){ return x.id.trim() === id; })
-       || members.find(function(x){ return x.id.toUpperCase() === id.toUpperCase(); });
+  var m = members.find(function(x) { return x.id === id; })
+       || members.find(function(x) { return x.id.trim() === id; })
+       || members.find(function(x) { return x.id.toUpperCase() === id.toUpperCase(); });
   if (!m) { showToast('Member not found: ' + id); return; }
   mmCurrentId = id;
-  document.getElementById('mm-name').textContent = m.firstName+' '+m.lastName;
-  document.getElementById('mm-id').textContent = 'ID: '+m.id;
+  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
+  document.getElementById('mm-id').textContent = 'ID: ' + m.id;
   mmTab('details');
   document.getElementById('member-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -1215,7 +1240,7 @@ function closeMemberModal() {
   document.getElementById('member-modal').style.display = 'none';
   document.body.style.overflow = '';
   mmCurrentId = '';
-  ['mm-card-preview','mm-digital-link','mm-pay-panel','mm-pickup-panel'].forEach(function(id){
+  ['mm-card-preview','mm-digital-link','mm-pay-panel','mm-pickup-panel'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1223,99 +1248,92 @@ function closeMemberModal() {
 
 function mmTab(tab) {
   ['details','edit','meals'].forEach(function(t) {
-    var panel = document.getElementById('mm-'+t);
-    if (panel) panel.style.display = t===tab ? 'block' : 'none';
-    var btn = document.getElementById('mm-tab-'+t);
+    var panel = document.getElementById('mm-' + t);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    var btn = document.getElementById('mm-tab-' + t);
     if (btn) {
-      btn.style.color = t===tab ? 'var(--navy)' : 'var(--muted)';
-      btn.style.borderBottom = t===tab ? '2px solid var(--gold)' : '2px solid transparent';
+      btn.style.color = t === tab ? 'var(--navy)' : 'var(--muted)';
+      btn.style.borderBottom = t === tab ? '2px solid var(--gold)' : '2px solid transparent';
     }
   });
-  if (tab==='details') mmLoadDetails();
-  if (tab==='edit') mmLoadEdit();
-  if (tab==='meals') mmLoadMeals();
+  if (tab === 'details') mmLoadDetails();
+  if (tab === 'edit') mmLoadEdit();
+  if (tab === 'meals') mmLoadMeals();
 }
 
-var mmCurrentId = '';
-var PAY = {full:'Paid in Full', balance:'Balance Due', '':'--'};
-var AGE = {adult:'Adult', senior:'Senior', child:'Child', '':'--'};
-
 function mmLoadDetails() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var hasBalance = m.paymentType === 'balance';
   var warn = document.getElementById('mm-balance-warn');
-  if (warn) { warn.style.display = hasBalance ? 'block' : 'none'; if (hasBalance) warn.textContent = 'Balance Due: '+(m.balanceNotes||'amount not specified'); }
-  var set = function(id,val){var el=document.getElementById(id);if(el)el.textContent=val;};
-  set('mm-tab-val', m.tabernacle||'--');
-  set('mm-age', AGE[m.ageGroup]||'--');
-  set('mm-email', m.email||'--');
-  set('mm-phone', m.phone||'--');
+  if (warn) { warn.style.display = hasBalance ? 'block' : 'none'; if (hasBalance) warn.textContent = 'Balance Due: ' + (m.balanceNotes || 'amount not specified'); }
+  var set = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+  set('mm-tab-val', m.tabernacle || '--');
+  set('mm-age', AGE[m.ageGroup] || '--');
+  set('mm-email', m.email || '--');
+  set('mm-phone', m.phone || '--');
   set('mm-reg', m.registeredAt ? new Date(m.registeredAt).toLocaleDateString() : '--');
-  set('mm-notes', m.notes||'--');
+  set('mm-notes', m.notes || '--');
   var payEl = document.getElementById('mm-pay');
-  if (payEl) payEl.innerHTML = '<span class="tag '+(hasBalance?'tag-balance':'tag-paid')+'">'+(PAY[m.paymentType]||'--')+'</span>';
+  if (payEl) payEl.innerHTML = '<span class="tag ' + (hasBalance ? 'tag-balance' : 'tag-paid') + '">' + (PAY[m.paymentType] || '--') + '</span>';
   var ciEl = document.getElementById('mm-ci');
-  if (ciEl) ciEl.innerHTML = '<span class="tag '+(m.checkinStatus==='checkedin'?'tag-in':'tag-pending')+'">'+(m.checkinStatus==='checkedin'?'Checked In':'Pending')+'</span>';
+  if (ciEl) ciEl.innerHTML = '<span class="tag ' + (m.checkinStatus === 'checkedin' ? 'tag-in' : 'tag-pending') + '">' + (m.checkinStatus === 'checkedin' ? 'Checked In' : 'Pending') + '</span>';
   var ciBtn = document.getElementById('mm-checkin-btn');
   if (ciBtn) {
-    if (m.checkinStatus==='checkedin'){ciBtn.textContent='Already Checked In';ciBtn.disabled=true;ciBtn.style.opacity='0.5';}
-    else if (hasBalance){ciBtn.textContent='Balance Due - Check In Anyway?';ciBtn.disabled=false;ciBtn.style.opacity='1';ciBtn.style.background='#92400E';}
-    else{ciBtn.textContent='Check In + Hand Over Package';ciBtn.disabled=false;ciBtn.style.opacity='1';ciBtn.style.background='';}
+    if (m.checkinStatus === 'checkedin') { ciBtn.textContent = 'Already Checked In'; ciBtn.disabled = true; ciBtn.style.opacity = '0.5'; }
+    else if (hasBalance) { ciBtn.textContent = 'Balance Due - Check In Anyway?'; ciBtn.disabled = false; ciBtn.style.opacity = '1'; ciBtn.style.background = '#92400E'; }
+    else { ciBtn.textContent = 'Check In + Hand Over Package'; ciBtn.disabled = false; ciBtn.style.opacity = '1'; ciBtn.style.background = ''; }
   }
   var payBtn = document.getElementById('mm-paybal-btn');
   if (payBtn) payBtn.style.display = hasBalance ? 'inline-block' : 'none';
 }
 
 function mmCheckIn() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   m.checkinStatus = 'checkedin';
-  syncWrite({action:'checkin', guestId:mmCurrentId});
-  mmLoadDetails();
-  renderCheckin();
-  renderMembers();
-  showToast(m.firstName+' checked in!');
+  syncWrite({action: 'checkin', guestId: mmCurrentId});
+  mmLoadDetails(); renderCheckin(); renderMembers();
+  showToast(m.firstName + ' checked in!');
 }
 
 function mmReprint() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   closeMemberModal();
-  setTimeout(function(){reprintSingle(m);},200);
+  setTimeout(function() { reprintSingle(m); }, 200);
 }
 
 function mmViewCard() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var preview = document.getElementById('mm-card-preview');
   var render = document.getElementById('mm-card-render');
   document.getElementById('mm-digital-link').style.display = 'none';
   document.getElementById('mm-pay-panel').style.display = 'none';
   document.getElementById('mm-pickup-panel').style.display = 'none';
-  var badgeHtml = makeBadge(m).replace('id="BQR-'+m.id+'"','id="MODAL-QR-'+m.id+'"');
-  render.innerHTML = badgeHtml;
+  render.innerHTML = makeBadge(m).replace('id="BQR-' + m.id + '"', 'id="MODAL-QR-' + m.id + '"');
   preview.style.display = 'block';
-  setTimeout(function(){
-    var el = document.getElementById('MODAL-QR-'+m.id);
-    if (el) { el.innerHTML=''; new QRCode(el,{text:m.id,width:80,height:80,colorDark:'#000000',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H}); }
-  },80);
+  setTimeout(function() {
+    var el = document.getElementById('MODAL-QR-' + m.id);
+    if (el) { el.innerHTML = ''; new QRCode(el, {text: m.id, width: 80, height: 80, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.H}); }
+  }, 80);
   preview.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function mmReprintFromPreview() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   document.getElementById('mm-card-preview').style.display = 'none';
   closeMemberModal();
-  setTimeout(function(){reprintSingle(m);},200);
+  setTimeout(function() { reprintSingle(m); }, 200);
 }
 
 function mmSendDigital() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var base = window.location.href.replace('passover-registration.html','passover-badge.html');
-  var url = base+'?id='+encodeURIComponent(m.id)+'&name='+encodeURIComponent(m.firstName+' '+m.lastName);
+  var url = base + '?id=' + encodeURIComponent(m.id) + '&name=' + encodeURIComponent(m.firstName + ' ' + m.lastName);
   document.getElementById('mm-card-preview').style.display = 'none';
   document.getElementById('mm-pay-panel').style.display = 'none';
   document.getElementById('mm-pickup-panel').style.display = 'none';
@@ -1326,12 +1344,10 @@ function mmSendDigital() {
 
 function mmCopyDigital() {
   var url = document.getElementById('mm-digital-url').textContent;
-  navigator.clipboard.writeText(url).then(function(){showToast('Link copied! Send to member.');}).catch(function(){prompt('Copy this link:',url);});
+  navigator.clipboard.writeText(url).then(function() { showToast('Link copied!'); }).catch(function() { prompt('Copy:', url); });
 }
 
-function mmOpenDigital() {
-  window.open(document.getElementById('mm-digital-url').textContent,'_blank');
-}
+function mmOpenDigital() { window.open(document.getElementById('mm-digital-url').textContent,'_blank'); }
 
 function mmPayBalance() {
   document.getElementById('mm-pay-panel').style.display = 'block';
@@ -1340,22 +1356,20 @@ function mmPayBalance() {
 }
 
 function mmSavePayment(type) {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var amount = document.getElementById('mm-pay-amount').value.trim();
-  if (type==='full') {
+  if (type === 'full') {
     m.paymentType = 'full';
-    m.balanceNotes = 'Paid in full'+(amount?' - '+amount:'')+' on '+new Date().toLocaleDateString();
-    showToast(m.firstName+' marked as Paid in Full!');
+    m.balanceNotes = 'Paid in full' + (amount ? ' - ' + amount : '') + ' on ' + new Date().toLocaleDateString();
+    showToast(m.firstName + ' marked as Paid in Full!');
   } else {
-    m.balanceNotes = 'Partial: '+amount+' on '+new Date().toLocaleDateString();
-    showToast('Partial payment recorded for '+m.firstName);
+    m.balanceNotes = 'Partial: ' + amount + ' on ' + new Date().toLocaleDateString();
+    showToast('Partial payment recorded for ' + m.firstName);
   }
   syncWrite({action:'register',guest:m});
   document.getElementById('mm-pay-panel').style.display = 'none';
-  mmLoadDetails();
-  renderMembers();
-  renderCheckin();
+  mmLoadDetails(); renderMembers(); renderCheckin();
 }
 
 function mmPackagePickup() {
@@ -1367,9 +1381,9 @@ function mmPackagePickup() {
 }
 
 function mmPickupSelf() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
-  m.notes = (m.notes?m.notes+' | ':'')+'Package picked up by member on '+new Date().toLocaleDateString();
+  m.notes = (m.notes ? m.notes + ' | ' : '') + 'Package picked up by member on ' + new Date().toLocaleDateString();
   syncWrite({action:'register',guest:m});
   document.getElementById('mm-pickup-other').style.display = 'none';
   document.getElementById('mm-pickup-self-confirm').style.display = 'block';
@@ -1377,97 +1391,101 @@ function mmPickupSelf() {
 }
 
 function mmSavePickup() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var name = document.getElementById('mm-pickup-name').value.trim();
   if (!name) { showToast('Please enter the name of the person picking up.'); return; }
-  m.notes = (m.notes?m.notes+' | ':'')+'Package picked up by '+name+' on '+new Date().toLocaleDateString();
+  m.notes = (m.notes ? m.notes + ' | ' : '') + 'Package picked up by ' + name + ' on ' + new Date().toLocaleDateString();
   syncWrite({action:'register',guest:m});
   document.getElementById('mm-pickup-panel').style.display = 'none';
-  showToast('Pickup recorded for '+name+'!');
+  showToast('Pickup recorded for ' + name + '!');
   mmLoadDetails();
 }
 
 function mmLoadEdit() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
-  var set = function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
-  set('mm-edit-fn',m.firstName);set('mm-edit-ln',m.lastName);
-  set('mm-edit-email',m.email);set('mm-edit-phone',m.phone);
-  set('mm-edit-bal',m.balanceNotes);set('mm-edit-notes',m.notes);
-  var payEl=document.getElementById('mm-edit-pay');if(payEl)payEl.value=m.paymentType||'full';
-  var s=document.getElementById('mm-edit-status');if(s)s.textContent='';
+  var set = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('mm-edit-fn', m.firstName); set('mm-edit-ln', m.lastName);
+  set('mm-edit-email', m.email); set('mm-edit-phone', m.phone);
+  set('mm-edit-bal', m.balanceNotes); set('mm-edit-notes', m.notes);
+  var payEl = document.getElementById('mm-edit-pay'); if (payEl) payEl.value = m.paymentType || 'full';
+  var s = document.getElementById('mm-edit-status'); if (s) s.textContent = '';
 }
 
 function mmSaveEdit() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
-  var get=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
-  m.firstName=get('mm-edit-fn');m.lastName=get('mm-edit-ln');
-  m.email=get('mm-edit-email');m.phone=get('mm-edit-phone');
-  m.paymentType=get('mm-edit-pay');m.balanceNotes=get('mm-edit-bal');m.notes=get('mm-edit-notes');
-  document.getElementById('mm-name').textContent=m.firstName+' '+m.lastName;
-  var s=document.getElementById('mm-edit-status');
-  if(s){s.textContent='Saved!';setTimeout(function(){s.textContent='';},2000);}
-  renderMembers();renderCheckin();
-  showToast('Changes saved for '+m.firstName);
+  var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  m.firstName = get('mm-edit-fn'); m.lastName = get('mm-edit-ln');
+  m.email = get('mm-edit-email'); m.phone = get('mm-edit-phone');
+  m.paymentType = get('mm-edit-pay'); m.balanceNotes = get('mm-edit-bal'); m.notes = get('mm-edit-notes');
+  document.getElementById('mm-name').textContent = m.firstName + ' ' + m.lastName;
+  var s = document.getElementById('mm-edit-status');
+  if (s) { s.textContent = 'Saved!'; setTimeout(function() { s.textContent = ''; }, 2000); }
+  renderMembers(); renderCheckin();
+  showToast('Changes saved for ' + m.firstName);
 }
 
 function mmLoadMeals() {
-  var m = members.find(function(x){return x.id===mmCurrentId;});
+  var m = members.find(function(x) { return x.id === mmCurrentId; });
   if (!m) return;
   var grid = document.getElementById('mm-meal-grid');
   if (!grid) return;
-  var days = ['Seder','Mar31','Apr1','Apr2','Apr3','Apr4','Apr5','Apr6','Apr7','Apr8'];
-  var labels = {Seder:'Seder',Mar31:'Mar 31',Apr1:'Apr 1',Apr2:'Apr 2',Apr3:'Apr 3',Apr4:'Apr 4',Apr5:'Apr 5',Apr6:'Apr 6',Apr7:'Apr 7',Apr8:'Apr 8'};
-  grid.innerHTML = days.map(function(day){
-    var b = m['B_'+day]==='USED';
-    var l = m['L_'+day]==='USED';
+  grid.innerHTML = DAYS_LIST.map(function(day) {
+    var bKey = 'scan_B_' + day, lKey = 'scan_L_' + day;
+    var bScans = {}, lScans = {};
+    try { bScans = JSON.parse(localStorage.getItem(bKey) || '{}'); } catch(e) {}
+    try { lScans = JSON.parse(localStorage.getItem(lKey) || '{}'); } catch(e) {}
+    var b = !!bScans[String(m.id)];
+    var l = !!lScans[String(m.id)];
+    var label = DAY_LABELS[day] || day;
     return '<div style="background:var(--off);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;">'+labels[day]+'</div>'
-      +(day==='Seder'?'<div><span style="background:'+(l?'var(--green-bg)':'var(--border)')+';color:'+(l?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Seder</span></div>'
-      :'<div style="margin-bottom:4px;"><span style="background:'+(b?'var(--green-bg)':'var(--border)')+';color:'+(b?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Breakfast</span></div>'
-      +'<div><span style="background:'+(l?'var(--green-bg)':'var(--border)')+';color:'+(l?'var(--green)':'var(--muted)')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Lunch</span></div>')
-      +'</div>';
+      + '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px;">' + label + '</div>'
+      + (day === 'Seder'
+        ? '<div><span style="background:' + (l ? 'var(--green-bg)' : 'var(--border)') + ';color:' + (l ? 'var(--green)' : 'var(--muted)') + ';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Seder</span></div>'
+        : '<div style="margin-bottom:4px;"><span style="background:' + (b ? 'var(--green-bg)' : 'var(--border)') + ';color:' + (b ? 'var(--green)' : 'var(--muted)') + ';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Breakfast</span></div>'
+          + '<div><span style="background:' + (l ? 'var(--green-bg)' : 'var(--border)') + ';color:' + (l ? 'var(--green)' : 'var(--muted)') + ';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Lunch</span></div>')
+      + '</div>';
   }).join('');
 }
 
 function saveSetup() {
   csvURL = document.getElementById('csv-url-input').value.trim();
   scriptURL = document.getElementById('script-url-input').value.trim();
-  localStorage.setItem('passover_csv_url',csvURL);
-  localStorage.setItem('passover_sheet_url',scriptURL);
+  localStorage.setItem('passover_csv_url', csvURL);
+  localStorage.setItem('passover_sheet_url', scriptURL);
   document.getElementById('setup-status').textContent = 'Saved! Loading members...';
-  loadFromSheet(function(){
-    document.getElementById('setup-status').textContent = members.length+' members loaded!';
-    showToast('Connected - '+members.length+' members loaded');
+  loadFromSheet(function() {
+    document.getElementById('setup-status').textContent = members.length + ' members loaded!';
+    showToast('Connected - ' + members.length + ' members loaded');
   });
 }
 
 function testConnection() {
   document.getElementById('setup-status').textContent = 'Testing...';
-  loadFromSheet(function(){
-    document.getElementById('setup-status').textContent = members.length>0?members.length+' members found!':'Connected but no members found yet';
+  loadFromSheet(function() {
+    document.getElementById('setup-status').textContent = members.length > 0 ? members.length + ' members found!' : 'Connected but no members found yet';
   });
 }
 
 function syncWrite(payload) {
   var url = localStorage.getItem('passover_sheet_url');
   if (!url) return;
-  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
+  fetch(url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}).catch(function(){});
 }
 
 function exportCSV() {
   if (!members.length) { showToast('No members to export.'); return; }
-  var h = ['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
-  var rows = members.map(function(m){
-    var arr=[m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt||'',m.notes||''];
-    return arr.map(function(v){return '"'+String(v).split('"').join('""')+'"';}).join(',');
+  var h = ['GuestID','FirstName','LastName','Tabernacle','AgeGroup'];
+  var csvRows = members.map(function(m) {
+    var arr = [m.id, m.firstName, m.lastName, m.tabernacle || '', m.ageGroup || ''];
+    return arr.map(function(v) { return '"' + String(v).split('"').join('""') + '"'; }).join(',');
   });
-  var csv=[h.join(',')].concat(rows).join('\n');
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';
+  var csv = [h.join(',')].concat(csvRows).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'cogasoc_members_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
 
@@ -1475,31 +1493,8 @@ function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3500);
+  setTimeout(function() { t.classList.remove('show'); }, 3500);
 }
-function exportCSV() {
-  if (!members.length) { showToast('No members to export.'); return; }
-  var h = ['GuestID','FirstName','LastName','Email','Phone','Tabernacle','AgeGroup','PaymentType','BalanceNotes','CheckinStatus','RegisteredAt','Notes'];
-  var rows = members.map(function(m){
-    var arr=[m.id,m.firstName,m.lastName,m.email||'',m.phone||'',m.tabernacle||'',m.ageGroup||'',m.paymentType||'',m.balanceNotes||'',m.checkinStatus||'',m.registeredAt||'',m.notes||''];
-    return arr.map(function(v){return '"'+String(v).split('"').join('""')+'"';}).join(',');
-  });
-  var csv=[h.join(',')].concat(rows).join('\n');
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='cogasoc_members_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3500);
-}
-
-
-
 </script>
 </body>
 </html>
